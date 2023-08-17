@@ -1,0 +1,1 @@
+exports.exports = require.p + "static/originium_arts.13526240f1a6ebaddd0b.png";

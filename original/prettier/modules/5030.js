@@ -1,0 +1,1 @@
+exports.exports = require.p + "static/nomadic_city.0856ca1fc4da54177a9a.png";

@@ -1,0 +1,22 @@
+var r = require(7908);
+var i = require(7466);
+var a = require(1246);
+var o = require(7659);
+var s = require(9974);
+var l = require(260).aTypedArrayConstructor;
+exports.exports = function (t) {
+  var e;
+  var n;
+  var u;
+  var c;
+  var h;
+  var d;
+  var f = r(t);
+  var p = arguments.length;
+  var m = p > 1 ? arguments[1] : void 0;
+  var v = void 0 !== m;
+  var g = a(f);
+  if (null != g && !o(g)) for (d = (h = g.call(f)).next, f = []; !(c = d.call(h)).done;) f.push(c.value);
+  for (v && p > 2 && (m = s(m, arguments[2], 2)), n = i(f.length), u = new (l(this))(n), e = 0; n > e; e++) u[e] = v ? m(f[e], e) : f[e];
+  return u;
+};

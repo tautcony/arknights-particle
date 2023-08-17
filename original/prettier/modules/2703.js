@@ -1,0 +1,1 @@
+require(8003)(Math, "Math", !0);

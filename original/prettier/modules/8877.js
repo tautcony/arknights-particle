@@ -1,0 +1,1 @@
+exports.exports = require.p + "static/SourceHanSerifCN-Regular.ba9ee4103d3d56642faa.woff";

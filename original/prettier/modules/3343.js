@@ -1,0 +1,1 @@
+exports.exports = require.p + "static/SourceHanSerifCN-Regular.ab1e09f0acadad82977a.svg";

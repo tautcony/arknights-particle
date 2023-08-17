@@ -1,0 +1,1 @@
+exports.exports = require.p + "static/rhodes_island.a8b9f712d951012ec40a.png";

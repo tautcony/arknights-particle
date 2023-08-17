@@ -1,0 +1,1 @@
+exports.exports = "varying vec2 vUv;\n\nvoid main()\n{\n      vUv = uv;\n      vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );\n      gl_Position = projectionMatrix * mvPosition;\n}";

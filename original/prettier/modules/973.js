@@ -1,0 +1,1 @@
+exports.exports = require.p + "static/infected.fe3e5622b0381b933397.png";
