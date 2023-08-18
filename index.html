@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.155.0/three.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" referrerpolicy="no-referrer"></script>
+    <title>Arknights Particle</title>
     <style>
+        canvas.staffCharDraw,
         canvas#webgl {
         width: 100%;
         height: 100%;
@@ -13,12 +12,12 @@
         left: 0;
         }
         body {
-            font-size: 13;
+            font-size: 13px;
         }
     </style>
 </head>
 <body style="background-color: black;">
-    <canvas id="webgl"></canvas>
     <canvas class="staffCharDraw"></canvas>
-    <script src="./arknights.js"></script>
+    <canvas id="webgl"></canvas>
+    <script src="./dist/arknights.min.js"></script>
 </body>

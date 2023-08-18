@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "amd",
+        "downlevelIteration": true,
+        "moduleResolution": "node",
+        "isolatedModules": false,
+        "sourceMap": true,
+        "jsx": "react",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "declaration": false,
+        "noImplicitAny": false,
+        "noImplicitUseStrict": false,
+        "removeComments": true,
+        "noLib": false,
+        "preserveConstEnums": true,
+        "noImplicitThis": true,
+        "types": [
+            "node"
+        ]
+    },
+    "include": [
+        "arknights.ts",
+    ],
+    "exclude": [
+        "node_modules",
+        "build",
+        "dist"
+    ]
+}
