@@ -1,7 +1,5 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable complexity */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-var-requires */
 import "core-js/es";
 import "regenerator-runtime/runtime";
 
@@ -9,8 +7,8 @@ import * as THREE from "three";
 import anime from "animejs/lib/anime.es.js";
 import { throttle, slice, fill, random, shuffle, flattenDepth } from "lodash";
 
-const particleImage = "./arknights/static/particle.7ff7f9a6de6e31926ddb.png";
-const fireflyImage = "./arknights/static/firefly.5ec707a0de1eca4a0765.png";
+const particleUrl = "./arknights/static/particle.7ff7f9a6de6e31926ddb.png";
+const fireflyUrl = "./arknights/static/firefly.5ec707a0de1eca4a0765.png";
 
 
 interface ParticleStoreStruct {
@@ -80,8 +78,8 @@ class ModelStruct {
         width: number,
         height: number;
     }
-    public shuffle? = (model: ModelStruct) => {};
-    public disappear? = (model: ModelStruct) => {};
+    public shuffle? = (_model: ModelStruct) => {};
+    public disappear? = (_model: ModelStruct) => {};
 }
 
 interface TransformStruct {
@@ -146,7 +144,7 @@ class AnimationHandler {
     public destroy() {
         window.cancelAnimationFrame(this.rafId);
     }
-};
+}
 
 // Ue
 class ResizeHandler {
@@ -175,7 +173,7 @@ class ResizeHandler {
         }
         return this;
     }
-};
+}
 
 // Li
 class WebglContainer {
@@ -292,7 +290,7 @@ class ResponsiveModeHandler {
         }
         return this;
     }
-};
+}
 
 // qi
 class TouchableHandler {
@@ -368,7 +366,7 @@ class TouchableHandler {
         this.x = 0;
         this.y = 0;
     }
-};
+}
 
 
 function GatherOrSpread(particle: ParticleStruct, model: ModelStruct, transform: TransformStruct, factor: number) {
@@ -539,7 +537,7 @@ class ParticleLoader {
         };
         const locationBuffer = new Float32Array(3 * particleNum);
         const colorBuffer = new Float32Array(4 * particleNum);
-        this.particles = fill(new Array(particleNum), 0).map(function(val, idx) {
+        this.particles = fill(new Array(particleNum), 0).map(function(_val, idx) {
             const x = (0.5 - Math.random()) * WebglContainer.instance.width;
             const y = (0.5 - Math.random()) * WebglContainer.instance.height;
             const z = 500 * (0.5 - Math.random());
@@ -566,8 +564,8 @@ class ParticleLoader {
         geo.setAttribute("position", this.aPosition);
         geo.setAttribute("color", this.aColor);
         this.uPointSize = new THREE.Uniform(1);
-        new THREE.TextureLoader().loadAsync(particleImage).then(t => {
-            let material = new THREE.ShaderMaterial({
+        new THREE.TextureLoader().loadAsync(particleUrl).then(t => {
+            const material = new THREE.ShaderMaterial({
                 uniforms: {
                     uTexture: new THREE.Uniform(t),
                     uPointSize: this.uPointSize,
@@ -708,157 +706,6 @@ function initParticleData(particle: ParticleStoreStruct, offset?: [number, numbe
     ret.shuffle();
     return ret;
 }
-
-// Qo
-const createPromiseWrapper = function(thisArg, args, fulfilledType, fn) {
-    if (fulfilledType == undefined) {
-        fulfilledType = Promise;
-    }
-    return new Promise(function(resolve, reject) {
-        function fulfillNext(t) {
-            try {
-                handlePromise(fn.next(t));
-            } catch (err) {
-                reject(err);
-            }
-        }
-        function handleRejection(t) {
-            try {
-                handlePromise(fn.throw(t));
-            } catch (err) {
-                reject(err);
-            }
-        }
-        function handlePromise(result) {
-            let e;
-            if (result.done) {
-                resolve(result.value);
-            } else {
-                e = result.value;
-                (e instanceof fulfilledType
-                    ? e
-                    : new fulfilledType(function(t) {
-                        t(e);
-                    })).then(fulfillNext, handleRejection);
-            }
-        }
-        handlePromise(
-            (fn = fn.apply(thisArg, args || [])).next()
-        );
-    });
-};
-// ts
-const createAsyncGenerator = function(thisArg, fn) {
-    let initContext;
-    let finalizeContext;
-    let record;
-    let ctx = {
-        label: 0,
-        sent() {
-            if (1 & record[0]) {throw record[1];}
-            return record[1];
-        },
-        trys: [],
-        ops: [],
-    };
-    const method = { next: createIteratorMethod(0), throw: createIteratorMethod(1), return: createIteratorMethod(2) };
-    if ("function" === typeof Symbol) {
-        method[Symbol.iterator] = function() {
-            return this;
-        };
-    }
-    return method;
-
-    function createIteratorMethod(kind) {
-        return function(input) {
-            return (function(arg) {
-                if (initContext) {throw new TypeError("Generator is already executing.");}
-                for (; ctx; ) {
-                    try {
-                        if (
-                            ((initContext = 1),
-                            finalizeContext &&
-                (record =
-                  2 & arg[0]
-                      ? finalizeContext.return
-                      : arg[0]
-                          ? finalizeContext.throw ||
-                      ((record = finalizeContext.return) &&
-                        record.call(finalizeContext),
-                      0)
-                          : finalizeContext.next) &&
-                !(record = record.call(finalizeContext, arg[1])).done)
-                        )
-                        {return record;}
-                        switch (
-                            ((finalizeContext = 0),
-                            record && (arg = [2 & arg[0], record.value]),
-                            arg[0])
-                        ) {
-                            case 0:
-                            case 1:
-                                record = arg;
-                                break;
-                            case 4:
-                                ctx.label++;
-                                return { value: arg[1], done: false };
-                            case 5:
-                                ctx.label++;
-                                finalizeContext = arg[1];
-                                arg = [0];
-                                continue;
-                            case 7:
-                                arg = ctx.ops.pop();
-                                ctx.trys.pop();
-                                continue;
-                            default:
-                                if (
-                                    !(
-                                        (record =
-                      (record = ctx.trys).length > 0 &&
-                      record[record.length - 1]) ||
-                    (6 !== arg[0] && 2 !== arg[0])
-                                    )
-                                ) {
-                                    ctx = null;
-                                    continue;
-                                }
-                                if (
-                                    3 === arg[0] &&
-                  (!record || (arg[1] > record[0] && arg[1] < record[3]))
-                                ) {
-                                    ctx.label = arg[1];
-                                    break;
-                                }
-                                if (6 === arg[0] && ctx.label < record[1]) {
-                                    ctx.label = record[1];
-                                    record = arg;
-                                    break;
-                                }
-                                if (record && ctx.label < record[2]) {
-                                    ctx.label = record[2];
-                                    ctx.ops.push(arg);
-                                    break;
-                                }
-                                if (record[2]) {
-                                    ctx.ops.pop();
-                                    ctx.trys.pop();
-                                }
-                                continue;
-                        }
-                        arg = fn.call(thisArg, ctx);
-                    } catch (t) {
-                        arg = [6, t];
-                        finalizeContext = 0;
-                    } finally {
-                        initContext = record = 0;
-                    }}
-                if (5 & arg[0]) {throw arg[1];}
-                return { value: arg[0] ? arg[1] : undefined, done: true };
-            })([kind, input]);
-        };
-    }
-};
 
 const displayConfig = {
     desktop: {
@@ -1067,19 +914,6 @@ class staffCharLoader {
     }
 }
 
-function randXPosition() {
-    return (Math.random() - 0.5) * (0.9 * WebglContainer.instance.width);
-}
-function randYPosition() {
-    return (Math.random() - 2.5) * (0.2 * WebglContainer.instance.height);
-}
-function randZPosition() {
-    return random(-200, 200);
-}
-function randLife() {
-    return random(60, 1200);
-}
-
 // gl
 class fireFlyLoader {
     private static _instance: fireFlyLoader;
@@ -1090,6 +924,11 @@ class fireFlyLoader {
     public aOpacity: THREE.BufferAttribute;
 
     public constructor(cnt: number = 20) {
+        const randX = () => (Math.random() - 0.5) * (0.9 * WebglContainer.instance.width);
+        const randY = () => (Math.random() - 2.5) * (0.2 * WebglContainer.instance.height);
+        const randZ = () => random(-200, 200);
+        const randLife = () => random(60, 1200);
+
         this.update = () => {
             for (const point of this.points) {
                 const go = this.globalOpacity;
@@ -1101,9 +940,9 @@ class fireFlyLoader {
                         point.opacity += 0.1 * (go - point.opacity);
                     }
                 } else {
-                    point.x = randXPosition();
-                    point.y = randYPosition();
-                    point.z = randZPosition();
+                    point.x = randX();
+                    point.y = randY();
+                    point.z = randZ();
                     point.life = randLife();
                     point.opacity = 0;
                 }
@@ -1119,7 +958,7 @@ class fireFlyLoader {
         const positionBuffer = Float32Array.from(
             flattenDepth(
                 fireFlyArray.map(function() {
-                    return [randXPosition(), randYPosition(), randZPosition()];
+                    return [randX(), randY(), randZ()];
                 })
                 ,1)
         );
@@ -1128,7 +967,7 @@ class fireFlyLoader {
         const geo = new THREE.BufferGeometry();
         geo.setAttribute("position", this.aPosition);
         geo.setAttribute("opacity", this.aOpacity);
-        this.points = fireFlyArray.map(function(value, index) {
+        this.points = fireFlyArray.map(function(_value, index) {
             return {
                 x: positionBuffer[3 * index],
                 y: positionBuffer[3 * index + 1],
@@ -1141,7 +980,7 @@ class fireFlyLoader {
                 aOpacity: opacityBuffer.subarray(index, index + 1),
             };
         });
-        new THREE.TextureLoader().load(fireflyImage, (t) => {
+        new THREE.TextureLoader().load(fireflyUrl, (t) => {
             const shaderMaterial = new THREE.ShaderMaterial({
                 uniforms: { uTexture: new THREE.Uniform(t) },
                 vertexShader: "attribute float opacity;\nvarying float vOpacity;\nvoid main() {\n    vOpacity = opacity;\n    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);\n    gl_PointSize = 7.0;\n    gl_Position = projectionMatrix * mvPosition;\n}",
@@ -1214,7 +1053,7 @@ class PolygonLoader {
         this.geometry = new THREE.IcosahedronGeometry(400, 1);
         const e = (this.uOpacity = new THREE.Uniform(this.globalOpacity));
         const n = (this.uOrigin = new THREE.Uniform([0, 0, 1]));
-        new THREE.TextureLoader().loadAsync(particleImage).then(t => {
+        new THREE.TextureLoader().loadAsync(particleUrl).then(t => {
             const color = new THREE.Uniform(new THREE.Color(0x968414));
             const texutre = new THREE.Uniform(t);
             const vertexShader = "\nuniform vec3 uOrigin;\nvarying float z;\nvoid main() {\n    z = position.z;\n    vec4 mvPosition = modelViewMatrix * vec4( position.xy * uOrigin.z + uOrigin.xy, 0.0, 1.0 );\n    gl_PointSize = 16.0 / uOrigin.z;\n    gl_Position = projectionMatrix * mvPosition;\n}\n";
@@ -1230,7 +1069,7 @@ class PolygonLoader {
                     depthTest: false,
                 })
             );
-            let points = new THREE.Points(
+            const points = new THREE.Points(
                 this.geometry,
                 new THREE.ShaderMaterial({
                     uniforms: {
@@ -1302,18 +1141,6 @@ const responsiveModeHandler = new ResponsiveModeHandler();
 const touchableHandler = new TouchableHandler();
 
 
-export function handlerInit() {
-    animationHandler.init();
-    resizeHandler.init();
-    responsiveModeHandler.init();
-    touchableHandler.init();
-}
-
-export function background() {
-    PolygonLoader.instance.appear().updatePolygonTransform(1);
-    fireFlyLoader.instance.appear();
-}
-
 const staffInfo = [
     {"name":"阿米娅","nameEn":"AMIYA","code":"ROO1","intro":"罗德岛的公开领袖，在内部拥有最高执行权。虽然，从外表上看起来仅仅是个不成熟的少女，实际上，她却是深受大家信任的合格的领袖。现在，阿米娅正带领着罗德岛，为了感染者的未来，为了让这片大地挣脱矿石病的阴霾而不懈努力。","cv":"黑泽朋世","profession":"caster","displayUrl":"arknights/official/pic/20210112/f40da70e0e3d2c89a89aa97c44b6498c.png","camp":"RHODES_ISLAND"},
     {"name":"凯尔希","nameEn":"KAL'TSIT","code":"B003","intro":"罗德岛最高管理者之一，阿米娅的直接辅导者。\n罗德岛医疗部门的总负责人。\n作为罗德岛的老成员，凯尔希医生是在阿米娅背后最稳固的援护者。","cv":"日笠阳子","profession":"medic","displayUrl":"arknights/official/pic/20210112/f5d1be51761704001cc9e7bd7529c849.png","camp":"RHODES_ISLAND"},
@@ -1330,6 +1157,18 @@ const staffInfo = [
     {"name":"星熊","nameEn":"HOSHIGUMA","code":"LM05","intro":"星熊，龙门近卫局特别任务组精英干员。存在数项指控记录。\n经龙门总督魏彦吾交涉，龙门近卫局依星熊的优异能力与良好表现，破格将其吸纳进近卫局特别督察组。在处理高危险性犯罪事件、要员保护、灾害紧急救援等领域表现出较高专业性。\n现作为重装干员协助罗德岛行动，并为现场提供战术执行与指挥支援。","cv":"安野希世乃","profession":"tank","displayUrl":"arknights/official/pic/20210112/22ab7b3789969d9c381b82d0f24c3c83.png","camp":"LUNGMEN"}
 ];
 
+export function handlerInit() {
+    animationHandler.init();
+    resizeHandler.init();
+    responsiveModeHandler.init();
+    touchableHandler.init();
+}
+
+export function background() {
+    PolygonLoader.instance.appear().updatePolygonTransform(1);
+    fireFlyLoader.instance.appear();
+}
+
 const particleDataLoader = ({fileName, key}) => {
     const particleData = require(`./arknights/static/data/${fileName}`);
     return {
@@ -1342,7 +1181,7 @@ export async function main() {
     const meshParticle = initParticleData({
         size: { width: 820, height: 460 },
         count: 1008,
-        points: fill(new Array(1008), 0).map(function(t, e) {
+        points: fill(new Array(1008), 0).map(function(_t, e) {
             return [(e % 42) * 20, 20 * Math.floor(e / 42), 126, 126, 126, 255];
         }),
     });

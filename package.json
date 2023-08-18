@@ -22,8 +22,10 @@
     "@babel/plugin-transform-runtime": "^7.22.10",
     "@babel/preset-env": "^7.22.10",
     "@types/animejs": "^3.1.7",
+    "@types/core-js": "^2.5.5",
     "@types/lodash": "^4.14.197",
     "@types/node": "^20.5.0",
+    "@types/regenerator-runtime": "^0.13.1",
     "@types/three": "^0.155.0",
     "@typescript-eslint/eslint-plugin": "^6.4.0",
     "@typescript-eslint/parser": "^6.4.0",
@@ -41,7 +43,8 @@
   "scripts": {
     "dev": "npx webpack --config build/webpack.dev.conf.js",
     "build": "npx webpack --config build/webpack.prod.conf.js",
-    "serve": "http-server -c-1"
+    "serve": "http-server -c-1",
+    "lint": "npx eslint arknights.ts"
   },
   "browserslist": [
     "> 1%",
