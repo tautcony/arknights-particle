@@ -2,10 +2,16 @@ import "core-js/es";
 import "regenerator-runtime/runtime";
 import * as THREE from "three";
 import anime from "animejs/lib/anime.es";
-import { throttle, slice, fill, random, shuffle, flattenDepth } from "lodash";
+import { throttle, slice, fill, random, shuffle, flattenDepth, map } from "lodash";
+
+/* Notes:
+Mi=THREE ue=anime
+Yi=_.slice Ne=_.throttle _i=_.fill oa=_.random ka=_.shuffle Ti=_.flattenDepth vi=_.map
+*/
 
 const particleUrl = "./arknights/static/particle.7ff7f9a6de6e31926ddb.png";
 const fireflyUrl = "./arknights/static/firefly.5ec707a0de1eca4a0765.png";
+const smokeUrl = "./arknights/static/smoke-texture.90db6d47c9dcb188bccb.png";
 
 interface ParticleStoreStruct {
     points: number[][];
@@ -565,8 +571,26 @@ class ParticleLoader {
                     uTexture: new THREE.Uniform(t),
                     uPointSize: this.uPointSize,
                 },
-                vertexShader: "attribute vec4 color;\nvarying vec4 vColor;\nuniform float uPointSize;\nvoid main() {\n    vColor = color;\n    vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );\n    gl_PointSize = uPointSize;\n    gl_Position = projectionMatrix * mvPosition;\n}\n",
-                fragmentShader: "uniform sampler2D uTexture;\nvarying vec4 vColor;\nvoid main() {\n    vec4 texture = texture2D(uTexture, gl_PointCoord);\n    gl_FragColor = vColor * texture;\n    // gl_FragColor = vColor;\n}",
+                vertexShader: `
+                attribute vec4 color;
+                varying vec4 vColor;
+                uniform float uPointSize;
+                void main() {
+                    vColor = color;
+                    vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+                    gl_PointSize = uPointSize;
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+                `,
+                fragmentShader: `
+                uniform sampler2D uTexture;
+                varying vec4 vColor;
+                void main() {
+                    vec4 texture = texture2D(uTexture, gl_PointCoord);
+                    gl_FragColor = vColor * texture;
+                    // gl_FragColor = vColor;
+                }
+                `,
                 transparent: true,
                 depthTest: false,
             });
@@ -766,8 +790,28 @@ class StaffCharLoader {
 
         this.mat = new THREE.ShaderMaterial({
             transparent: true,
-            fragmentShader: "uniform sampler2D u_texture;\nuniform float black;\nuniform float opacity;\nuniform bool gradient;\nvarying vec2 vUv;\n\nvoid main() {\n   float o = gradient ? opacity * min(vUv.y * 2.0 - 0.5, 1.0) : opacity;\n   gl_FragColor = texture2D(u_texture, vUv) * vec4(black, black, black, o);\n}",
-            vertexShader: "varying vec2 vUv;\n\nvoid main()\n{\n      vUv = uv;\n      vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );\n      gl_Position = projectionMatrix * mvPosition;\n}",
+            fragmentShader: `
+            uniform sampler2D u_texture;
+            uniform float black;
+            uniform float opacity;
+            uniform bool gradient;
+            varying vec2 vUv;
+            
+            void main() {
+               float o = gradient ? opacity * min(vUv.y * 2.0 - 0.5, 1.0) : opacity;
+               gl_FragColor = texture2D(u_texture, vUv) * vec4(black, black, black, o);
+            }
+            `,
+            vertexShader: `
+            varying vec2 vUv;
+
+            void main()
+            {
+                vUv = uv;
+                vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+                gl_Position = projectionMatrix * mvPosition;
+            }
+            `,
             uniforms: {
                 u_texture: { value: this.emptyTexture },
                 black: { value: 1 },
@@ -939,8 +983,24 @@ class FireFlyLoader {
         new THREE.TextureLoader().load(fireflyUrl, (t) => {
             const shaderMaterial = new THREE.ShaderMaterial({
                 uniforms: { uTexture: new THREE.Uniform(t) },
-                vertexShader: "attribute float opacity;\nvarying float vOpacity;\nvoid main() {\n    vOpacity = opacity;\n    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);\n    gl_PointSize = 7.0;\n    gl_Position = projectionMatrix * mvPosition;\n}",
-                fragmentShader: "uniform sampler2D uTexture;\nvarying float vOpacity;\nvoid main() {\n    vec4 texture = texture2D(uTexture, gl_PointCoord.xy);\n    gl_FragColor = vec4(texture.rgb, texture.a * vOpacity);\n}",
+                vertexShader: `
+                attribute float opacity;
+                varying float vOpacity;
+                void main() {
+                    vOpacity = opacity;
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = 7.0;
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+                `,
+                fragmentShader: `
+                uniform sampler2D uTexture;
+                varying float vOpacity;
+                void main() {
+                    vec4 texture = texture2D(uTexture, gl_PointCoord.xy);
+                    gl_FragColor = vec4(texture.rgb, texture.a * vOpacity);
+                }
+                `,
                 transparent: true,
                 depthTest: false,
             });
@@ -1012,9 +1072,33 @@ class PolygonLoader {
         new THREE.TextureLoader().loadAsync(particleUrl).then(t => {
             const color = new THREE.Uniform(new THREE.Color(0x968414));
             const texutre = new THREE.Uniform(t);
-            const vertexShader = "uniform vec3 uOrigin;\nvarying float z;\nvoid main() {\n    z = position.z;\n    vec4 mvPosition = modelViewMatrix * vec4( position.xy * uOrigin.z + uOrigin.xy, 0.0, 1.0 );\n    gl_PointSize = 16.0 / uOrigin.z;\n    gl_Position = projectionMatrix * mvPosition;\n}\n";
-            const fragmentShaderColor = "uniform vec3 uColor;\nvarying float z;\nuniform float uOpacity;\nvoid main() {\n    gl_FragColor = vec4(uColor, ((z / 400.0) + 0.5) * uOpacity);\n}\n";
-            const fragmentShaderTexture = "uniform vec3 uColor;\nvarying float z;\nuniform sampler2D uTexture;\nuniform float uOpacity;\nvoid main() {\n    vec4 texture = texture2D(uTexture, gl_PointCoord.xy);\n    gl_FragColor = texture * vec4(uColor, ((z / 400.0) + 0.5) * uOpacity);\n}\n";
+            const vertexShader = `
+            uniform vec3 uOrigin;
+            varying float z;
+            void main() {
+                z = position.z;
+                vec4 mvPosition = modelViewMatrix * vec4( position.xy * uOrigin.z + uOrigin.xy, 0.0, 1.0 );
+                gl_PointSize = 16.0 / uOrigin.z;
+                gl_Position = projectionMatrix * mvPosition;
+            }
+            `;
+            const fragmentShaderColor = `
+            uniform vec3 uColor;
+            varying float z;
+            uniform float uOpacity;
+            void main() {
+                gl_FragColor = vec4(uColor, ((z / 400.0) + 0.5) * uOpacity);
+            }
+            `;
+            const fragmentShaderTexture = `
+            uniform vec3 uColor;
+            varying float z;
+            uniform sampler2D uTexture;
+            uniform float uOpacity;
+            void main() {
+                vec4 texture = texture2D(uTexture, gl_PointCoord.xy);
+                gl_FragColor = texture * vec4(uColor, ((z / 400.0) + 0.5) * uOpacity);
+            }`;
             const lineSegments = new THREE.LineSegments(
                 this.geometry,
                 new THREE.ShaderMaterial({
@@ -1092,6 +1176,433 @@ class PolygonLoader {
                 sc: 0.6,
             };
         });
+    }
+}
+
+// Ci
+class LqWebglContainer {
+    private static _instance: LqWebglContainer;
+    private fitViewport: () => void;
+    private update: () => void;
+    private canvas: HTMLCanvasElement;
+    private scene: THREE.Scene;
+    private renderer: THREE.WebGLRenderer;
+
+    constructor() {
+        this.fitViewport = () => {
+            const n = this.resoluteWidth;
+            const r = this.resoluteHeight;
+            if (this.canvas.width === n && this.canvas.height === r) {
+                this.renderer.setSize(n, r, false);
+            }
+        };
+
+        this.update = () => {
+            this.fitViewport();
+            this.renderer.render(this.scene, WebglContainer.instance.camera);
+        };
+
+        this.canvas = document.getElementById("lq-webgl") as HTMLCanvasElement;
+        if (!this.canvas) {
+            throw new Error("no canvas element");
+        }
+
+        this.scene = new THREE.Scene();
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            alpha: true,
+            antialias: true,
+        });
+
+        this.fire();
+    }
+
+    get width(): number {
+        return this.canvas.clientWidth;
+    }
+
+    get height(): number {
+        return this.canvas.clientHeight;
+    }
+
+    get resoluteWidth(): number {
+        return Math.round(this.canvas.clientWidth / 2);
+    }
+
+    get resoluteHeight(): number {
+        return Math.round(this.canvas.clientHeight / 2);
+    }
+
+    public fire(): void {
+        animationHandler.add(this.update);
+    }
+
+    public stop(): void {
+        animationHandler.remove(this.update);
+    }
+
+    public static get instance(): LqWebglContainer {
+        return LqWebglContainer._instance || (LqWebglContainer._instance = new LqWebglContainer());
+    }
+
+    public randX() {
+        return (Math.random() - 0.5) * this.resoluteWidth;
+    }
+    public randY() {
+        return (0.5 - Math.random()) * this.resoluteHeight;
+    }
+}
+
+function generatePointLightDesktop() {
+    const t = LqWebglContainer.instance,
+        e = t.resoluteWidth,
+        n = t.resoluteHeight;
+    return {
+        position: [1.1 * e, 0.8 * n, 0],
+        disappearAt: 1.2 * n,
+        strength: 0.3,
+    };
+}
+function generateSpotLightDesktop() {
+    const t = LqWebglContainer.instance,
+        e = t.resoluteWidth,
+        n = t.resoluteHeight;
+    return [
+        {
+            position: [1.3 * e, 1 * n, 0],
+            lookAt: [0.6 * e, 0.8 * n, 0],
+            strength: 0.6,
+        },
+        {
+            position: [1.4 * e, 0.9 * n, 0],
+            lookAt: [0.2 * e, 0.4 * n, 0],
+            strength: 0.8,
+        },
+        {
+            position: [1.3 * e, 0.75 * n, 0],
+            lookAt: [0.6 * e, 0.35 * n, 0],
+            strength: 0.6,
+        },
+        {
+            position: [1.3 * e, 0.7 * n, 0],
+            lookAt: [0.7 * e, 0.25 * n, 0],
+            strength: 0.2,
+        },
+    ];
+}
+function generatePointLightPhone() {
+    const t = LqWebglContainer.instance,
+        e = t.resoluteWidth,
+        n = t.resoluteHeight;
+    return {
+        position: [0 * e, 1.1 * n, 0],
+        disappearAt: 1.2 * n,
+        strength: 0.3,
+    };
+}
+function generateSpotLightPhone() {
+    const t = LqWebglContainer.instance,
+        e = t.resoluteWidth,
+        n = t.resoluteHeight;
+    return [
+        {
+            position: [-0.1 * e, 1.4 * n, 0],
+            lookAt: [0.1 * e, 0.8 * n, 0],
+            strength: 0.4,
+        },
+        {
+            position: [-0.1 * e, 1.6 * n, 0],
+            lookAt: [0.5 * e, 0.6 * n, 0],
+            strength: 0.6,
+        },
+        {
+            position: [0 * e, 1.6 * n, 0],
+            lookAt: [0.7 * e, 0.7 * n, 0],
+            strength: 0.3,
+        },
+        {
+            position: [0.3 * e, 1.3 * n, 0],
+            lookAt: [0.8 * e, 0.8 * n, 0],
+            strength: 0.2,
+        },
+    ];
+}
+function updateParticleProperties(point: SmokePointStruct, arr: [number, number, number]) {
+    const n = arr[0];
+
+    point.x += (Math.random() + 0.1) * Math.sign(n - point.x - 0.5 * LqWebglContainer.instance.resoluteWidth);
+    point.y += Math.random() + 0.05;
+
+    if (
+        Math.abs(point.x) > 0.6 * LqWebglContainer.instance.resoluteWidth ||
+        Math.abs(point.y) > 0.7 * LqWebglContainer.instance.resoluteHeight
+    ) {
+        point.opacity = Math.max(0, point.opacity - 0.01);
+        if (point.opacity <= 0) {
+            point.x = LqWebglContainer.instance.randX();
+            point.y = LqWebglContainer.instance.randY();
+        }
+    } else {
+        point.opacity = Math.min(1, point.opacity + 0.01);
+    }
+
+    point.rotate += 0.006 * point.vRtt;
+
+    point.bufferPosition.set([point.x, point.y]);
+    point.bufferOpacity.set([point.opacity]);
+    point.bufferRotate.set([point.rotate]);
+}
+
+interface SmokePointStruct {
+    x: number;
+    y: number;
+    rotate: number;
+    opacity: number;
+    size: number;
+    vRtt: number;
+    bufferPosition: Float32Array;
+    bufferRotate: Float32Array;
+    bufferOpacity: Float32Array;
+    bufferSize: Float32Array;
+}
+
+// Bi
+class SomkeLoader {
+    private static _instance: SomkeLoader;
+    private onResize: () => void;
+    private update: () => void;
+    private uSpotLights: THREE.Uniform | null;
+    private uPointLight: THREE.Uniform | null;
+    private uOpacity: THREE.Uniform;
+    private uResolution: THREE.Uniform;
+    private aPosition: THREE.BufferAttribute;
+    private aRotate: THREE.BufferAttribute;
+    private aOpacity: THREE.BufferAttribute;
+    private aSize: THREE.BufferAttribute;
+    private points: SmokePointStruct[];
+    private opacityAnimation: anime.AnimeInstance = null;
+
+    constructor(t: number = 30) {
+        this.uSpotLights = new THREE.Uniform(null);
+        this.uPointLight = new THREE.Uniform(null);
+        this.uOpacity = new THREE.Uniform(0);
+        this.uResolution = new THREE.Uniform(1);
+
+        this.onResize = () => {
+            if (responsiveModeHandler.mode === "desktop") {
+                this.uSpotLights.value = generateSpotLightDesktop();
+                this.uPointLight.value = generatePointLightDesktop();
+            } else if (responsiveModeHandler.mode === "phone") {
+                this.uSpotLights.value = generateSpotLightPhone();
+                this.uPointLight.value = generatePointLightPhone();
+            }
+
+            const size = Math.min(LqWebglContainer.instance.width, LqWebglContainer.instance.height);
+            this.aSize.set(
+                map(this.aSize.array, () => {
+                    return (Math.random() + 1.5) * size;
+                })
+            );
+            this.aSize.needsUpdate = true;
+        };
+
+        this.update = () => {
+            this.uResolution.value = 0.5;
+
+            for (const point of this.points) {
+                updateParticleProperties(point, this.uPointLight.value.position);
+            }
+
+            this.aPosition.needsUpdate = true;
+            this.aOpacity.needsUpdate = true;
+            this.aRotate.needsUpdate = true;
+        };
+
+        const geo = new THREE.BufferGeometry();
+        const pointArray = fill(new Array(t), 0);
+
+        const positionBuffer = Float32Array.from(
+            flattenDepth(
+                pointArray.map(() => {
+                    return [LqWebglContainer.instance.randX(), LqWebglContainer.instance.randY(), 0];
+                }), 1
+            )
+        );
+
+        this.aPosition = new THREE.BufferAttribute(positionBuffer, 3);
+        geo.setAttribute("position", this.aPosition);
+
+        const a = Float32Array.from(pointArray).map(() => {
+            return 2 * Math.random() * Math.PI;
+        });
+
+        this.aRotate = new THREE.BufferAttribute(a, 1);
+        geo.setAttribute("rotate", this.aRotate);
+
+        const o = Float32Array.from(pointArray).map(() => {
+            return 0;
+        });
+
+        this.aOpacity = new THREE.BufferAttribute(o, 1);
+        geo.setAttribute("opacity", this.aOpacity);
+
+        const s = Float32Array.from(pointArray).map(() => {
+            return 1;
+        });
+
+        this.aSize = new THREE.BufferAttribute(s, 1);
+        geo.setAttribute("size", this.aSize);
+
+        this.points = pointArray.map((val, e) => {
+            return {
+                x: positionBuffer[3 * e],
+                y: positionBuffer[3 * e + 1],
+                rotate: a[e],
+                opacity: o[e],
+                size: s[e],
+                vRtt: Math.random() - 0.5,
+                bufferPosition: positionBuffer.subarray(3 * e, 3 * e + 3),
+                bufferRotate: a.subarray(e, e + 1),
+                bufferOpacity: o.subarray(e, e + 1),
+                bufferSize: s.subarray(e, e + 1),
+            };
+        });
+
+        const l = generateSpotLightDesktop();
+        new THREE.TextureLoader().load(smokeUrl, (texture) => {
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTexture: new THREE.Uniform(texture),
+                    uSpotLights: this.uSpotLights,
+                    uPointLight: this.uPointLight,
+                    uOpacity: this.uOpacity,
+                    uResolution: this.uResolution,
+                },
+                vertexShader: `
+                attribute float rotate;
+                attribute float size;
+                uniform float uResolution;
+                varying mat2 vRotateMat;
+                attribute float opacity;
+                varying float vOpacity;
+                void main() {
+                    vOpacity = opacity;
+                    vRotateMat = mat2(cos(rotate), sin(rotate), -sin(rotate), cos(rotate));
+                    vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+                    gl_PointSize = uResolution * size;
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+                `,
+                fragmentShader: `
+                #define SPOT_LIGHTS_LENGTH ${l.length}
+                struct SpotLight {
+                    vec3  position;
+                    vec3  lookAt;
+                    float strength;
+                };
+                uniform SpotLight uSpotLights[SPOT_LIGHTS_LENGTH];
+                struct PointLight {
+                    vec3  position;
+                    float disappearAt;
+                    float strength;
+                };
+                uniform PointLight uPointLight;
+                uniform sampler2D uTexture;
+                uniform float uOpacity;
+                varying mat2 vRotateMat;
+                varying float vOpacity;
+                float adaptSpotLight(SpotLight light) {
+                    vec3 lightLine = light.position - light.lookAt;
+                    vec3 dir = light.position - gl_FragCoord.xyz;
+                    float lDir = length(dir);
+                    float theta = dot(normalize(lightLine), normalize(dir));
+                    if (theta < 0.0) {
+                        return 0.0;
+                    }
+                    float distance = lDir * theta;
+                    float attenuation = max(0.0, length(lightLine) * 0.2 / (lDir + 1.0));
+                    if (attenuation < 0.05) {
+                       return 0.0;
+                    }
+                    float height = lDir * sqrt(1.0 - pow(theta, 2.0));
+                    float intensity = (atan((-height + distance * 0.03) * 60.0 / distance) + 1.4) * 0.3;
+                    return max(0.0, intensity * attenuation * light.strength);
+                }
+                float adaptPointLight(PointLight light) {
+                    vec3 dir = light.position - gl_FragCoord.xyz;
+                    float attenuation = max(0.0, light.disappearAt * 0.2 / (length(dir) + 1.0) );
+                    return max(0.0, attenuation * light.strength);
+                }
+                void main() {
+                    vec4 texture = texture2D(uTexture, (gl_PointCoord.xy - 0.5) * vRotateMat + 0.5);
+                    float result = 0.0;
+                    if(texture.a > 0.01) {
+                       for (int i = 0; i < SPOT_LIGHTS_LENGTH; i++) {
+                           result += adaptSpotLight(uSpotLights[i]);
+                       }
+                       result += adaptPointLight(uPointLight);
+                    }
+                    gl_FragColor = vec4(min(result, 1.0) * texture.rgb, texture.a * uOpacity * vOpacity);
+                }
+                `,    
+                transparent: true,
+                depthTest: false,
+            });
+
+            const points = new THREE.Points(geo, material);
+            WebglContainer.instance.scene.add(points);
+            this.fire();
+        });
+    }
+
+    public fire(): void {
+        animationHandler.add(this.update);
+        this.onResize();
+        resizeHandler.add(this.onResize);
+    }
+
+    public stop(): void {
+        animationHandler.remove(this.update);
+        resizeHandler.remove(this.onResize);
+    }
+
+    public disappear(): void {
+        if (this.opacityAnimation !== null) {
+            this.opacityAnimation.pause();
+        }
+
+        this.opacityAnimation = anime({
+            targets: this.uOpacity,
+            value: 0,
+            easing: "linear",
+            duration: 500,
+            complete: () => {
+                self.stop();
+                requestAnimationFrame(() => {
+                    return LqWebglContainer.instance.stop();
+                });
+            },
+        });
+    }
+
+    public appear(): void {
+        if (this.opacityAnimation !== null) {
+            this.opacityAnimation.pause();
+        }
+
+        this.fire();
+        LqWebglContainer.instance.fire();
+
+        this.opacityAnimation = anime({
+            targets: this.uOpacity,
+            value: 0.8,
+            easing: "linear",
+            duration: 500,
+        });
+    }
+
+    public static get instance(): SomkeLoader {
+        return SomkeLoader._instance || (SomkeLoader._instance = new SomkeLoader());
     }
 }
 
@@ -1195,6 +1706,8 @@ export async function main() {
     setInterval(() => {
         ParticleLoader.main.setMode([EffectEnum.GATHER, EffectEnum.PERSPECTIVE, EffectEnum.SPREAD][random(0, 2)]);
     }, 10000);
+
+    SomkeLoader.instance.appear();
 }
 
 init();
