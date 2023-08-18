@@ -2,6 +2,9 @@
 
 This repository accomplishes the reverse engineering of the code for the WebGL portion of the official Arknights website, enabling it to function independently.
 
+# Preview
+Here's a sneak peek of this repo: [Arknights Particle](https://tautcony.github.io/arknights-particle/)
+
 # Getting Started
 
 To begin working with this repository, follow these steps:
