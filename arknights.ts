@@ -177,7 +177,7 @@ const resizeHandler = new ResizeHandler();
 
 // He
 class ResponsiveModeHandler {
-    public mode: string = "desktop";
+    public mode: "desktop" | "phone" = "desktop";
     private queue: ((mode?: string) => void)[] = [];
     private widthThrottle: number = 430;
 
@@ -570,8 +570,8 @@ class ParticleLoader {
                 transparent: true,
                 depthTest: false,
             });
-            const r = new THREE.Points(geo, material);
-            WebglContainer.instance.scene.add(r);
+            const points = new THREE.Points(geo, material);
+            WebglContainer.instance.scene.add(points);
         });
     }
 
@@ -721,12 +721,12 @@ class StaffCharLoader {
     public renderer: THREE.WebGLRenderer;
     public emptyTexture: THREE.Texture = new THREE.Texture();
     public charTextureMap: Record<string, THREE.Texture> = {};
-    public resize: () => void;
-    public update: () => void;
-    public checkAndRemove: () => void;
     public geo: THREE.PlaneGeometry;
     public item: THREE.Mesh;
     public mat: THREE.ShaderMaterial;
+    public resize: () => void;
+    public update: () => void;
+    public checkAndRemove: () => void;
 
     public constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -1140,7 +1140,7 @@ export async function main() {
             return [(idx % 42) * 20, 20 * Math.floor(idx / 42), 126, 126, 126, 255];
         }),
     });
-    ParticleLoader.main.setMode(EffectEnum.SPREAD).setModel(meshParticle).appear();
+    ParticleLoader.main.setMode(EffectEnum.SPREAD).setModel(meshParticle).appear().fire();
 
     const pData = [
         { key: "lungmen", fileName: "lungmen.data.json" },
@@ -1181,8 +1181,10 @@ export async function main() {
     const draw = new StaffCharLoader(document.querySelector(".staffCharDraw"));
     // await draw.getPreloadTasks(staffInfo.map(t => t.displayUrl || ""));
     await draw.init(staffInfo[0].displayUrl);
+    draw.resetMode(responsiveModeHandler.mode);
     draw.add();
 
+    responsiveModeHandler.add(draw.resetMode.bind(draw));
     setInterval(() => {
         const idx = random(0, staffInfo.length - 1);
         ParticleLoader.main.setModel(faction[staffInfo[idx].camp].model);
@@ -1190,6 +1192,9 @@ export async function main() {
 
         draw.transTo(staffInfo[idx].displayUrl, "next");
     }, 5000);
+    setInterval(() => {
+        ParticleLoader.main.setMode([EffectEnum.GATHER, EffectEnum.PERSPECTIVE, EffectEnum.SPREAD][random(0, 2)]);
+    }, 10000);
 }
 
 init();
