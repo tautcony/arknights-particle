@@ -1,6 +1,5 @@
 const path = require("path");
 const WebpackBar = require("webpackbar");
-const TerserPlugin = require("terser-webpack-plugin");
 const ESLintPlugin = require("eslint-webpack-plugin");
 
 const babelConfig = {

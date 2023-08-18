@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+// from: https://github.com/mengjian-github/copilot-analysis
 const fs = require("fs");
 const parser = require("@babel/parser");
 const types = require("@babel/types");
