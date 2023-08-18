@@ -96,7 +96,7 @@ enum EffectEnum {
 
 interface ParticleLoaderConfig {
     particleNum: number;
-    speedRange: number[];
+    speedRange: [number, number];
 }
 
 interface ParticleLoaderLoadConfig {
@@ -220,29 +220,22 @@ const responsiveModeHandler = new ResponsiveModeHandler();
 // Li
 class WebglContainer {
     private static _instance: WebglContainer;
-    // var
+
     public canvas: HTMLCanvasElement;
-    public scene: THREE.Scene;
-    public camera: THREE.PerspectiveCamera;
+    public scene: THREE.Scene = new THREE.Scene();
+    public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
     public renderer: THREE.WebGLRenderer;
-    // func
     public fitViewport: () => void;
     public update: () => void;
 
     public constructor() {
         this.fitViewport = throttle(() => {
-            const n = this.width;
-            const r = this.height;
-            const i = this.resoluteWidth;
-            const a = this.resoluteHeight;
-            if (!(this.canvas.width === i && this.canvas.height === a)) {
-                this.renderer.setSize(i, a, false);
+            if (this.canvas.width !== this.resoluteWidth || this.canvas.height !== this.resoluteHeight) {
+                this.renderer.setSize(this.resoluteWidth, this.resoluteHeight, false);
                 this.camera.near = 110;
                 this.camera.far = 1e3;
-                this.camera.aspect = n / r;
-                this.camera.fov = THREE.MathUtils.radToDeg(
-                    2 * Math.atan(r / 2 / 160)
-                );
+                this.camera.aspect = this.width / this.height;
+                this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(this.height / 2 / 160));
                 this.camera.updateProjectionMatrix();
                 this.camera.position.set(0, 0, 160);
                 this.camera.lookAt(0, 0, 0);
@@ -256,8 +249,6 @@ class WebglContainer {
         if (!this.canvas) {
             throw new Error("no webgl canvas");
         }
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera();
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
             alpha: true,
@@ -308,7 +299,7 @@ class TouchableHandler {
         for (const eventType of ["mousemove", "touchstart", "touchmove"]) {
             document.addEventListener(
                 eventType,
-                throttle((evt) => {
+                throttle((evt: MouseEvent | TouchEvent) => {
                     this.interactive = true;
                     if ("targetTouches" in evt) {
                         this.clientX = evt.targetTouches[0].clientX;
@@ -321,16 +312,15 @@ class TouchableHandler {
                         this.x = evt.clientX - 0.5 * WebglContainer.instance.width;
                         this.y = 0.5 * WebglContainer.instance.height - evt.clientY;
                     }
-                    let r;
+                    let targets: EventTarget[];
                     if (evt.composedPath !== null && evt.composedPath !== undefined) {
-                        const e = evt.composedPath;
-                        r = e.call(evt) || [];
+                        targets = evt.composedPath() || [];
                     } else {
-                        r = [];
+                        targets = [];
                     }
                     let flag = false;
                     for (let o = 0; o < 3; o++) {
-                        const s = r[o];
+                        const s = targets[o] as HTMLElement;
                         const n = s.dataset;
                         const cursorValue = null === n || undefined === n ? undefined : n.cursor;
                         const tagNames = ["A", "BUTTON", "INPUT"];
@@ -391,15 +381,17 @@ function GatherOrSpread(particle: ParticleStruct, model: ModelStruct, transform:
     const a = pointsData[6];
     const touchOffsetX = touchableHandler.interactive ? touchableHandler.x - particle.x : 0;
     const touchOffsetY = touchableHandler.interactive ? touchableHandler.y - particle.y : 0;
-    const hypotenuse = Math.sqrt(touchOffsetX * touchOffsetX + touchOffsetY * touchOffsetY);
-    const hypotenuseFactor = 1 / (1 + hypotenuse) / (1 + hypotenuse);
-    const xx = transform.sc * x + transform.x - particle.x;
-    const yy = transform.sc * y + transform.y - particle.y;
-    const zz = z - particle.z;
-    particle.x += xx * i + factor * touchOffsetX * hypotenuseFactor;
-    particle.y += yy * i + factor * touchOffsetY * hypotenuseFactor;
-    particle.z += zz * i;
+    const touchHypotenuse = Math.sqrt(touchOffsetX * touchOffsetX + touchOffsetY * touchOffsetY);
+    const touchHypotenuseFactor = 1 / (1 + touchHypotenuse) / (1 + touchHypotenuse);
+    const transformedX = transform.sc * x + transform.x - particle.x;
+    const transformedY = transform.sc * y + transform.y - particle.y;
+    const transformedZ = z - particle.z;
+
+    particle.x += transformedX * i + factor * touchOffsetX * touchHypotenuseFactor;
+    particle.y += transformedY * i + factor * touchOffsetY * touchHypotenuseFactor;
+    particle.z += transformedZ * i;
     particle.point.set([particle.x, particle.y, particle.z]);
+
     particle.r += (r - particle.r) * i;
     particle.g += (g - particle.g) * i;
     particle.b += (b - particle.b) * i;
@@ -426,13 +418,15 @@ const ParticalEffect = {
         const g = pointData[4];
         const b = pointData[5];
         const a = pointData[6];
-        const xx = transform.sc * x + transform.x - particle.x;
-        const yy = transform.sc * y + transform.y - particle.y;
-        const zz = z - particle.z;
-        particle.x += xx * i;
-        particle.y += yy * i;
-        particle.z += zz * i;
+        const transformedX = transform.sc * x + transform.x - particle.x;
+        const transformedY = transform.sc * y + transform.y - particle.y;
+        const transformedZ = z - particle.z;
+
+        particle.x += transformedX * i;
+        particle.y += transformedY * i;
+        particle.z += transformedZ * i;
         particle.point.set([particle.x, particle.y, particle.z]);
+
         particle.r += (r - particle.r) * i;
         particle.g += (g - particle.g) * i;
         particle.b += (b - particle.b) * i;
@@ -449,11 +443,11 @@ const ParticalEffect = {
         if (!model) {
             return;
         }
-        const Ji = 1 / 3e3;
-        const $i = 0.03;
-        const i = 0.08;
+        const frictionCoefficient = 1 / 3e3;
+        const interactionCoefficient = 0.03;
+        const displacementCoefficient = 0.08;
         if (particle.pointIdx >= model.count) {
-            particle.a += (-1 - particle.a) * i;
+            particle.a += (-1 - particle.a) * displacementCoefficient;
             particle.color.set([particle.r, particle.g, particle.b, particle.a]);
             return;
         }
@@ -466,24 +460,29 @@ const ParticalEffect = {
         const g = pointData[4];
         const b = pointData[5];
         const a = pointData[6];
-        const factor1 = -Math.atan(touchableHandler.x * $i * Ji);
-        const xx = transform.sc * x + transform.x;
-        const factor2 = xx * Math.cos(factor1);
-        const factor3 = xx * Math.sin(factor1);
-        const factor4 = -Math.atan(touchableHandler.y * $i * Ji);
-        const yy = transform.sc * y + transform.y;
-        const factor5 = yy * Math.cos(factor4);
-        const zz = z + factor3 + yy * Math.sin(factor4);
-        const xxx = factor2 - touchableHandler.x * $i - particle.x;
-        const yyy = factor5 - touchableHandler.y * $i - particle.y;
-        particle.x += xxx * i;
-        particle.y += yyy * i;
-        particle.z += (zz - particle.z) * i;
+
+        const touchInteractionAngleX = -Math.atan(touchableHandler.x * interactionCoefficient * frictionCoefficient);
+        const transformedX = transform.sc * x + transform.x;
+        const touchInteractionFactorX = transformedX * Math.cos(touchInteractionAngleX);
+        const touchInteractionFactorY = transformedX * Math.sin(touchInteractionAngleX);
+
+        const touchInteractionAngleY = -Math.atan(touchableHandler.y * interactionCoefficient * frictionCoefficient);
+        const transformedY = transform.sc * y + transform.y;
+        const touchInteractionFactorY2 = transformedY * Math.cos(touchInteractionAngleY);
+        const pointZShifted = z + touchInteractionFactorY + transformedY * Math.sin(touchInteractionAngleY);
+
+        const displacementX = touchInteractionFactorX - touchableHandler.x * interactionCoefficient - particle.x;
+        const displacementY = touchInteractionFactorY2 - touchableHandler.y * interactionCoefficient - particle.y;
+
+        particle.x += displacementX * displacementCoefficient;
+        particle.y += displacementY * displacementCoefficient;
+        particle.z += (pointZShifted - particle.z) * displacementCoefficient;
         particle.point.set([particle.x, particle.y, particle.z]);
-        particle.r += (r - particle.r) * i;
-        particle.g += (g - particle.g) * i;
-        particle.b += (b - particle.b) * i;
-        particle.a += (a - particle.a) * i;
+
+        particle.r += (r - particle.r) * displacementCoefficient;
+        particle.g += (g - particle.g) * displacementCoefficient;
+        particle.b += (b - particle.b) * displacementCoefficient;
+        particle.a += (a - particle.a) * displacementCoefficient;
         particle.color.set([particle.r, particle.g, particle.b, particle.a]);
     },
 };
@@ -491,26 +490,22 @@ const ParticalEffect = {
 class ParticleLoader {
     public static _main: ParticleLoader;
     public static _sub: ParticleLoader;
-    public mode: EffectEnum;
-    public transform: TransformStruct;
-    public particles: ParticleStruct[];
-    public uPointSize: THREE.Uniform<number>;
+    public mode: EffectEnum = EffectEnum.SPREAD;
+    public transform: TransformStruct = { x: 0, y: 0, sc: 1, pointSize: 3 };
+    public uPointSize: THREE.Uniform<number> = new THREE.Uniform(1);
     public aPosition: THREE.BufferAttribute;
     public aColor: THREE.BufferAttribute;
     public model: ModelStruct;
+    public particles: ParticleStruct[];
 
     // func
-    public getUpdatedTransform: () => TransformStruct | undefined;
+    public getUpdatedTransform: () => TransformStruct | undefined = () => undefined;
     public updateTransform: () => ParticleLoader;
     public update: () => void;
 
     public constructor(config: ParticleLoaderConfig) {
         const particleNum = config.particleNum;
-        const minSpeed = config.speedRange[0];
-        const maxSpeed = config.speedRange[1];
-        this.mode = EffectEnum.SPREAD;
-        this.transform = { x: 0, y: 0, sc: 1, pointSize: 3 };
-        this.getUpdatedTransform = () => undefined;
+        const [minSpeed, maxSpeed] = config.speedRange;
         this.updateTransform = () => {
             const transform = this.getUpdatedTransform() || {
                 x: 0,
@@ -564,7 +559,6 @@ class ParticleLoader {
         const geo = new THREE.BufferGeometry();
         geo.setAttribute("position", this.aPosition);
         geo.setAttribute("color", this.aColor);
-        this.uPointSize = new THREE.Uniform(1);
         new THREE.TextureLoader().loadAsync(particleUrl).then(t => {
             const material = new THREE.ShaderMaterial({
                 uniforms: {
@@ -653,13 +647,9 @@ class ParticleLoader {
 }
 
 function initParticleData(particle: ParticleStoreStruct, offset: [number, number] = [0.5, 0.5]): ModelStruct {
-    const offsetFactorX = offset[0];
-    const offsetFactorY = offset[1];
+    const [offsetFactorX, offsetFactorY] = offset;
     const point = particle.points.map((pt) => {
-        const x = pt[0];
-        const y = pt[1];
-        const z = pt[2];
-        const a = undefined === z ? 255 : z;
+        const [x, y, a] = pt;
         return [
             x - offsetFactorX * particle.size.width,
             offsetFactorY * particle.size.height - y,
@@ -667,7 +657,7 @@ function initParticleData(particle: ParticleStoreStruct, offset: [number, number
             1,
             1,
             1,
-            (1 * a) / 255,
+            (1 * (a ? a : 255)) / 255,
         ];
     });
 
@@ -679,25 +669,17 @@ function initParticleData(particle: ParticleStoreStruct, offset: [number, number
             return this;
         },
         disappear() {
-            this.points.forEach((val, idx, arr) => {
-                switch (idx % 7) {
-                    case 0:
-                    case 1:
-                        arr[idx] = val + 500 * (Math.random() - 0.5);
-                        break;
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                        arr[idx] = 0.5;
-                        break;
-                    case 6:
-                        arr[idx] = -0.5;
-                        break;
-                    default:
-                        break;
-                }
-            });
+            for (let i = 0; i < this.count; i++) {
+                const x = this.points[i * 7 + 0];
+                const y = this.points[i * 7 + 1];
+                this.points[i * 7 + 0] = x + 500 * (Math.random() - 0.5);
+                this.points[i * 7 + 1] = y + 500 * (Math.random() - 0.5);
+                this.points[i * 7 + 2] = 0.5;
+                this.points[i * 7 + 3] = 0.5;
+                this.points[i * 7 + 4] = 0.5;
+                this.points[i * 7 + 5] = 0.5;
+                this.points[i * 7 + 6] = -0.5;
+            }
             return this;
         },
     };
@@ -727,18 +709,18 @@ const displayConfig = {
 // ns
 class StaffCharLoader {
     public canvas: HTMLCanvasElement;
-    public active: boolean;
-    public animeRunning: boolean;
-    public tex: THREE.Texture;
-    public loader: THREE.TextureLoader;
+    public active: boolean = false;
+    public animeRunning: boolean = false;
+    public tex: THREE.Texture = null;
+    public loader: THREE.TextureLoader = new THREE.TextureLoader();
     public itemWidth: number;
     public itemHeight: number;
     public itemPosition: THREE.Vector2;
     public itemTransOffset: number;
-    public itemGradient: boolean;
+    public itemGradient: boolean = false;
     public renderer: THREE.WebGLRenderer;
-    public emptyTexture: THREE.Texture;
-    public charTextureMap: Record<string, THREE.Texture>;
+    public emptyTexture: THREE.Texture = new THREE.Texture();
+    public charTextureMap: Record<string, THREE.Texture> = {};
     public resize: () => void;
     public update: () => void;
     public checkAndRemove: () => void;
@@ -748,10 +730,6 @@ class StaffCharLoader {
 
     public constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        this.active = false;
-        this.animeRunning = false;
-        this.tex = null;
-        this.loader = new THREE.TextureLoader();
         this.itemWidth = displayConfig.desktop.width;
         this.itemHeight = displayConfig.desktop.height;
         this.itemPosition = new THREE.Vector2(displayConfig.desktop.x, displayConfig.desktop.y);
@@ -762,8 +740,6 @@ class StaffCharLoader {
             alpha: true,
             antialias: true,
         });
-        this.emptyTexture = new THREE.Texture();
-        this.charTextureMap = {};
         this.resize = () => {
             this.canvas.width = WebglContainer.instance.width * window.devicePixelRatio;
             this.canvas.height = WebglContainer.instance.height * window.devicePixelRatio;
@@ -793,7 +769,6 @@ class StaffCharLoader {
             fragmentShader: "uniform sampler2D u_texture;\nuniform float black;\nuniform float opacity;\nuniform bool gradient;\nvarying vec2 vUv;\n\nvoid main() {\n   float o = gradient ? opacity * min(vUv.y * 2.0 - 0.5, 1.0) : opacity;\n   gl_FragColor = texture2D(u_texture, vUv) * vec4(black, black, black, o);\n}",
             vertexShader: "varying vec2 vUv;\n\nvoid main()\n{\n      vUv = uv;\n      vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );\n      gl_Position = projectionMatrix * mvPosition;\n}",
             uniforms: {
-                // eslint-disable-next-line camelcase
                 u_texture: { value: this.emptyTexture },
                 black: { value: 1 },
                 opacity: { value: 0 },
@@ -821,21 +796,19 @@ class StaffCharLoader {
         }
     }
     public getPreloadTasks(imageList: string[]) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
         return Promise.all(imageList.map(async (textureUrl) => {
             const t = await this.loader.loadAsync(textureUrl);
             t.minFilter = THREE.LinearFilter;
             this.charTextureMap[textureUrl] = t;
         }));
     }
-    public init(textureUrl: string) {
+    public async init(textureUrl: string) {
         this.setDisplay(textureUrl);
         this.resize();
         this.animeRunning = true;
-        this.animeEnter("next").then(() => {
-            this.animeRunning = false;
-            this.checkAndRemove();
-        });
+        await this.animeEnter("next");
+        this.animeRunning = false;
+        this.checkAndRemove();
     }
     public add() {
         this.active = true;
@@ -847,66 +820,59 @@ class StaffCharLoader {
         this.active = false;
         this.checkAndRemove();
     }
-    public setDisplay(textureUrl: string) {
+    public async setDisplay(textureUrl: string) {
         let texutre = this.charTextureMap[textureUrl];
-        if (texutre) {
-            this.updateDisplayTexture(texutre);
-        } else {
-            texutre = this.loader.load(textureUrl, (n) => {
-                this.charTextureMap[textureUrl] = n;
-                this.updateDisplayTexture(n);
-            });
+        if (!texutre) {
+            texutre = await this.loader.loadAsync(textureUrl);
+            this.charTextureMap[textureUrl] = texutre;
         }
+        this.updateDisplayTexture(texutre);
     }
     public updateDisplayTexture(texture: THREE.Texture) {
-        const e = texture.image;
-        const n = e.width;
-        const r = e.height;
         this.tex = texture;
         this.mat.uniforms.u_texture.value = texture;
-        this.item.scale.set(n / this.itemWidth, r / this.itemHeight, 1);
+        const image = texture.image;
+        this.item.scale.set(image.width / this.itemWidth, image.height / this.itemHeight, 1);
     }
     public async transTo(textureUrl: string, direction: "prev" | "next" = "prev") {
         this.animeRunning = true;
         await this.animeExit(direction);
-        this.setDisplay(textureUrl);
+        await this.setDisplay(textureUrl);
         await this.animeEnter(direction);
         this.animeRunning = false;
         this.checkAndRemove();
     }
     public animeEnter(direction: "prev" | "next") {
-        const e = { val: 0 };
-        const n = "next" === direction ? 1 : -1;
+        const progress = { val: 0 };
+        const factor = "next" === direction ? 1 : -1;
         return anime({
             duration: 800,
-            targets: e,
+            targets: progress,
             val: 1,
             easing: "easeOutQuart",
             update: () => {
-                const tt = e.val;
-                this.item.position.x =  this.itemPosition.x + (1 - tt) * n * this.itemTransOffset;
-                this.item.rotation.y = (1 - tt) * n * 0.08;
-                this.mat.uniforms.opacity.value = tt;
-                const ii = Math.max(2 * tt - 1, 0);
-                this.mat.uniforms.black.value = ii;
+                this.item.position.x =  this.itemPosition.x + (1 - progress.val) * factor * this.itemTransOffset;
+                this.item.rotation.y = (1 - progress.val) * factor * 0.08;
+                this.mat.uniforms.opacity.value = progress.val;
+                const black = Math.max(2 * progress.val - 1, 0);
+                this.mat.uniforms.black.value = black;
             },
         }).finished;
     }
     public animeExit(direction: "prev" | "next") {
-        const e = { val: 0 };
-        const n = "next" === direction ? 1 : -1;
+        const progress = { val: 0 };
+        const factor = "next" === direction ? 1 : -1;
         return anime({
             duration: 800,
-            targets: e,
+            targets: progress,
             val: 1,
             easing: "easeOutQuart",
             update: () => {
-                const tt = e.val;
-                this.item.position.x = this.itemPosition.x - tt * n * this.itemTransOffset;
-                this.item.rotation.y = tt * n * -0.08;
-                this.mat.uniforms.opacity.value = 1 - tt;
-                const ii = Math.min(1 - 2 * tt, 1);
-                this.mat.uniforms.black.value = ii;
+                this.item.position.x = this.itemPosition.x - progress.val * factor * this.itemTransOffset;
+                this.item.rotation.y = progress.val * factor * -0.08;
+                this.mat.uniforms.opacity.value = 1 - progress.val;
+                const black = Math.min(1 - 2 * progress.val, 1);
+                this.mat.uniforms.black.value = black;
             },
         }).finished;
     }
@@ -917,7 +883,7 @@ class FireFlyLoader {
     private static _instance: FireFlyLoader;
     public update: () => void;
     public points: FireFlyStruct[];
-    public globalOpacity: number;
+    public globalOpacity: number = 0;
     public aPosition: THREE.BufferAttribute;
     public aOpacity: THREE.BufferAttribute;
 
@@ -929,13 +895,12 @@ class FireFlyLoader {
 
         this.update = () => {
             for (const point of this.points) {
-                const go = this.globalOpacity;
                 if (point.life--) {
                     point.y += point.speed;
                     if (point.life < 30) {
                         point.opacity += 0.1 * (0 - point.opacity);
                     } else {
-                        point.opacity += 0.1 * (go - point.opacity);
+                        point.opacity += 0.1 * (this.globalOpacity - point.opacity);
                     }
                 } else {
                     point.x = randX();
@@ -950,7 +915,6 @@ class FireFlyLoader {
             this.aPosition.needsUpdate = true;
             this.aOpacity.needsUpdate = true;
         };
-        this.globalOpacity = 0;
         const fireFlyArray = fill(new Array(cnt), 0);
         const opacityBuffer = Float32Array.from(fireFlyArray);
         const positionBuffer = Float32Array.from(flattenDepth(fireFlyArray.map(() => [randX(), randY(), randZ()]), 1));
@@ -1043,20 +1007,24 @@ class PolygonLoader {
             return this;
         };
         this.geometry = new THREE.IcosahedronGeometry(400, 1);
-        const e = (this.uOpacity = new THREE.Uniform(this.globalOpacity));
-        const n = (this.uOrigin = new THREE.Uniform([0, 0, 1]));
+        this.uOpacity = new THREE.Uniform(this.globalOpacity);
+        this.uOrigin = new THREE.Uniform([0, 0, 1]);
         new THREE.TextureLoader().loadAsync(particleUrl).then(t => {
             const color = new THREE.Uniform(new THREE.Color(0x968414));
             const texutre = new THREE.Uniform(t);
-            const vertexShader = "\nuniform vec3 uOrigin;\nvarying float z;\nvoid main() {\n    z = position.z;\n    vec4 mvPosition = modelViewMatrix * vec4( position.xy * uOrigin.z + uOrigin.xy, 0.0, 1.0 );\n    gl_PointSize = 16.0 / uOrigin.z;\n    gl_Position = projectionMatrix * mvPosition;\n}\n";
-            const fragmentShader1 = "\nuniform vec3 uColor;\nvarying float z;\nuniform float uOpacity;\nvoid main() {\n    gl_FragColor = vec4(uColor, ((z / 400.0) + 0.5) * uOpacity);\n}\n";
-            const fragmentShader2 = "\nuniform vec3 uColor;\nvarying float z;\nuniform sampler2D uTexture;\nuniform float uOpacity;\nvoid main() {\n    vec4 texture = texture2D(uTexture, gl_PointCoord.xy);\n    gl_FragColor = texture * vec4(uColor, ((z / 400.0) + 0.5) * uOpacity);\n}\n";
+            const vertexShader = "uniform vec3 uOrigin;\nvarying float z;\nvoid main() {\n    z = position.z;\n    vec4 mvPosition = modelViewMatrix * vec4( position.xy * uOrigin.z + uOrigin.xy, 0.0, 1.0 );\n    gl_PointSize = 16.0 / uOrigin.z;\n    gl_Position = projectionMatrix * mvPosition;\n}\n";
+            const fragmentShaderColor = "uniform vec3 uColor;\nvarying float z;\nuniform float uOpacity;\nvoid main() {\n    gl_FragColor = vec4(uColor, ((z / 400.0) + 0.5) * uOpacity);\n}\n";
+            const fragmentShaderTexture = "uniform vec3 uColor;\nvarying float z;\nuniform sampler2D uTexture;\nuniform float uOpacity;\nvoid main() {\n    vec4 texture = texture2D(uTexture, gl_PointCoord.xy);\n    gl_FragColor = texture * vec4(uColor, ((z / 400.0) + 0.5) * uOpacity);\n}\n";
             const lineSegments = new THREE.LineSegments(
                 this.geometry,
                 new THREE.ShaderMaterial({
-                    uniforms: { uColor: color, uOpacity: e, uOrigin: n },
+                    uniforms: {
+                        uColor: color,
+                        uOpacity: this.uOpacity,
+                        uOrigin: this.uOrigin,
+                    },
                     vertexShader: vertexShader,
-                    fragmentShader: fragmentShader1,
+                    fragmentShader: fragmentShaderColor,
                     transparent: true,
                     depthTest: false,
                 })
@@ -1067,11 +1035,11 @@ class PolygonLoader {
                     uniforms: {
                         uColor: color,
                         uTexture: texutre,
-                        uOpacity: e,
-                        uOrigin: n,
+                        uOpacity: this.uOpacity,
+                        uOrigin: this.uOrigin,
                     },
                     vertexShader: vertexShader,
-                    fragmentShader: fragmentShader2,
+                    fragmentShader: fragmentShaderTexture,
                     transparent: true,
                     depthTest: false,
                 })
@@ -1175,75 +1143,29 @@ export async function main() {
     ParticleLoader.main.setMode(EffectEnum.SPREAD).setModel(meshParticle).appear();
 
     const pData = [
-        {
-            key: "lungmen",
-            fileName: "lungmen.data.json",
-        },
-        {
-            key: "penguin",
-            fileName: "penguin.data.json",
-        },
-        {
-            key: "rhine",
-            fileName: "rhine.data.json",
-        },
-        {
-            key: "rhodes",
-            fileName: "rhodes.data.json",
-        },
-        {
-            key: "originiums",
-            fileName: "story-1-originiums.data.json",
-        },
-        {
-            key: "originium_arts",
-            fileName: "story-2-originium_arts.data.json",
-        },
-        {
-            key: "reunion",
-            fileName: "story-3-reunion.data.json",
-        },
-        {
-            key: "infected",
-            fileName: "story-4-infected.data.json",
-        },
-        {
-            key: "nomadic_city",
-            fileName: "story-5-nomadic_city.data.json",
-        },
-        {
-            key: "rhodes_island",
-            fileName: "story-6-rhodes_island.data.json",
-        },
+        { key: "lungmen", fileName: "lungmen.data.json" },
+        { key: "penguin", fileName: "penguin.data.json" },
+        { key: "rhine", fileName: "rhine.data.json" },
+        { key: "rhodes", fileName: "rhodes.data.json" },
+        { key: "originiums", fileName: "story-1-originiums.data.json" },
+        { key: "originium_arts", fileName: "story-2-originium_arts.data.json" },
+        { key: "reunion", fileName: "story-3-reunion.data.json" },
+        { key: "infected", fileName: "story-4-infected.data.json" },
+        { key: "nomadic_city", fileName: "story-5-nomadic_city.data.json" },
+        { key: "rhodes_island", fileName: "story-6-rhodes_island.data.json" },
     ].map(particleDataLoader);    
 
     const pTitleData = [
-        {
-            key: "infomation",
-            fileName: "title-information.data.json",
-        },
-        {
-            key: "media",
-            fileName: "title-media.data.json",
-        },
-        {
-            key: "staff",
-            fileName: "title-staff.data.json",
-        },
-        {
-            key: "world",
-            fileName: "title-world.data.json",
-        },
+        { key: "infomation", fileName: "title-information.data.json" },
+        { key: "media", fileName: "title-media.data.json" },
+        { key: "staff", fileName: "title-staff.data.json" },
+        { key: "world", fileName: "title-world.data.json" },
     ].map(particleDataLoader);
     const fontSize = parseInt(window.getComputedStyle(document.body).fontSize, 10);
     ParticleLoader.sub.setMode(EffectEnum.FIXED).setTransform(() => {
         return {
-            x: Math.round(
-                5.875 * fontSize - 0.3 * WebglContainer.instance.width
-            ),
-            y: Math.round(
-                0.5 * WebglContainer.instance.height - 3.5 * fontSize
-            ),
+            x: Math.round(5.875 * fontSize - 0.3 * WebglContainer.instance.width),
+            y: Math.round(0.5 * WebglContainer.instance.height - 3.5 * fontSize),
             sc: fontSize / 16,
             pointSize: 1,
         };
@@ -1257,8 +1179,9 @@ export async function main() {
     };
 
     const draw = new StaffCharLoader(document.querySelector(".staffCharDraw"));
+    // await draw.getPreloadTasks(staffInfo.map(t => t.displayUrl || ""));
+    await draw.init(staffInfo[0].displayUrl);
     draw.add();
-    draw.getPreloadTasks(staffInfo.map(t => t.displayUrl || ""));
 
     setInterval(() => {
         const idx = random(0, staffInfo.length - 1);
