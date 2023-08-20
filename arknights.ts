@@ -2,7 +2,9 @@ import "core-js/es";
 import "regenerator-runtime/runtime";
 import * as THREE from "three";
 import anime from "animejs/lib/anime.es";
-import { throttle, slice, fill, random, shuffle, flattenDepth, map } from "lodash";
+import {
+    throttle, slice, fill, random, shuffle, flattenDepth, map,
+} from "lodash";
 
 /* Notes:
 Mi=THREE ue=anime
@@ -48,14 +50,8 @@ class ParticleStruct {
         this.run = 0;
         this.pointIdx = t.pointIdx;
         this.speed = t.speed;
-        this.x = t.point[0];
-        this.y = t.point[1];
-        this.z = t.point[2];
-        this.r = t.color[0];
-        this.g = t.color[1];
-        this.b = t.color[2];
-        this.a = t.color[3];
-
+        [this.x, this.y, this.z] = t.point;
+        [this.r, this.g, this.b, this.a] = t.color;
         this.point = t.point;
         this.color = t.color;
     }
@@ -80,9 +76,9 @@ class ModelStruct {
         width: number,
         height: number;
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
     public shuffle? = (_model: ModelStruct) => {};
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
     public disappear? = (_model: ModelStruct) => {};
 }
 
@@ -192,10 +188,10 @@ class ResponsiveModeHandler {
         resizeHandler.add(() => {
             const r = window.innerWidth;
             let updated = false;
-            if (r > this.widthThrottle && "phone" === this.mode) {
+            if (r > this.widthThrottle && this.mode === "phone") {
                 this.mode = "desktop";
                 updated = true;
-            } else if (r <= this.widthThrottle && "desktop" === this.mode) {
+            } else if (r <= this.widthThrottle && this.mode === "desktop") {
                 this.mode = "phone";
                 updated = true;
             }
@@ -276,12 +272,12 @@ class WebglContainer {
         return this.canvas.clientHeight;
     }
     public get resoluteWidth() {
-        return "desktop" === responsiveModeHandler.mode
+        return responsiveModeHandler.mode === "desktop"
             ? this.canvas.clientWidth
             : Math.round(this.canvas.clientWidth * window.devicePixelRatio);
     }
     public get resoluteHeight() {
-        return "desktop" === responsiveModeHandler.mode
+        return responsiveModeHandler.mode === "desktop"
             ? this.canvas.clientHeight
             : Math.round(this.canvas.clientHeight * window.devicePixelRatio);
     }
@@ -325,13 +321,13 @@ class TouchableHandler {
                         targets = [];
                     }
                     let flag = false;
-                    for (let o = 0; o < 3; o++) {
+                    for (let o = 0; o < 3; ++o) {
                         const s = targets[o] as HTMLElement;
                         const n = s.dataset;
-                        const cursorValue = null === n || undefined === n ? undefined : n.cursor;
+                        const cursorValue = n === null || undefined === n ? undefined : n.cursor;
                         const tagNames = ["A", "BUTTON", "INPUT"];
 
-                        if ("pointer" === cursorValue || tagNames.includes(s.tagName)) {
+                        if (cursorValue === "pointer" || tagNames.includes(s.tagName)) {
                             flag = true;
                             break;
                         }
@@ -346,7 +342,7 @@ class TouchableHandler {
             document.addEventListener(
                 eventType,
                 throttle(() => {
-                    if ("phone" === responsiveModeHandler.mode) {
+                    if (responsiveModeHandler.mode === "phone") {
                         this.interactive = false;
                         this.x = 0;
                         this.y = 0;
@@ -376,7 +372,7 @@ function GatherOrSpread(particle: ParticleStruct, model: ModelStruct, transform:
         particle.color.set([particle.r, particle.g, particle.b, particle.a]);
         return;
     }
-    const pointIdx = particle.pointIdx;
+    const { pointIdx } = particle;
     const pointsData = slice(model.points.slice(7 * pointIdx, 7 * pointIdx + 7), 0, 7);
     const x = pointsData[0];
     const y = pointsData[1];
@@ -415,7 +411,7 @@ const ParticalEffect = {
             particle.color.set([particle.r, particle.g, particle.b, particle.a]);
             return;
         }
-        const pointIdx = particle.pointIdx;
+        const { pointIdx } = particle;
         const pointData = slice(model.points.slice(7 * pointIdx, 7 * pointIdx + 7), 0, 7);
         const x = pointData[0];
         const y = pointData[1];
@@ -457,7 +453,7 @@ const ParticalEffect = {
             particle.color.set([particle.r, particle.g, particle.b, particle.a]);
             return;
         }
-        const pointIdx = particle.pointIdx;
+        const { pointIdx } = particle;
         const pointData = slice(model.points.slice(7 * pointIdx, 7 * pointIdx + 7), 0, 7);
         const x = pointData[0];
         const y = pointData[1];
@@ -497,20 +493,22 @@ class ParticleLoader {
     public static _main: ParticleLoader;
     public static _sub: ParticleLoader;
     public mode: EffectEnum = EffectEnum.SPREAD;
-    public transform: TransformStruct = { x: 0, y: 0, sc: 1, pointSize: 3 };
+    public transform: TransformStruct = {
+        x: 0, y: 0, sc: 1, pointSize: 3,
+    };
     public uPointSize: THREE.Uniform<number> = new THREE.Uniform(1);
     public aPosition: THREE.BufferAttribute;
     public aColor: THREE.BufferAttribute;
     public model: ModelStruct;
     public particles: ParticleStruct[];
 
-    // func
+    // eslint-disable-next-line class-methods-use-this
     public getUpdatedTransform: () => TransformStruct | undefined = () => undefined;
     public updateTransform: () => ParticleLoader;
     public update: () => void;
 
     public constructor(config: ParticleLoaderConfig) {
-        const particleNum = config.particleNum;
+        const { particleNum } = config;
         const [minSpeed, maxSpeed] = config.speedRange;
         this.updateTransform = () => {
             const transform = this.getUpdatedTransform() || {
@@ -519,14 +517,14 @@ class ParticleLoader {
                 sc: 1,
                 pointSize: 3,
             };
-            const x = transform.x;
-            const y = transform.y;
-            const sc = transform.sc;
-            const pointSize = transform.pointSize;
-            this.transform.x = null !== x ? x : this.transform.x;
-            this.transform.y = null !== y ? y : this.transform.y;
-            this.transform.sc = null !== sc ? sc : this.transform.sc;
-            this.uPointSize.value = null !== pointSize ? pointSize : this.transform.pointSize;
+            const { x } = transform;
+            const { y } = transform;
+            const { sc } = transform;
+            const { pointSize } = transform;
+            this.transform.x = x !== null ? x : this.transform.x;
+            this.transform.y = y !== null ? y : this.transform.y;
+            this.transform.sc = sc !== null ? sc : this.transform.sc;
+            this.uPointSize.value = pointSize !== null ? pointSize : this.transform.pointSize;
             return this;
         };
         this.update = () => {
@@ -565,7 +563,7 @@ class ParticleLoader {
         const geo = new THREE.BufferGeometry();
         geo.setAttribute("position", this.aPosition);
         geo.setAttribute("color", this.aColor);
-        new THREE.TextureLoader().loadAsync(particleUrl).then(t => {
+        new THREE.TextureLoader().loadAsync(particleUrl).then((t) => {
             const material = new THREE.ShaderMaterial({
                 uniforms: {
                     uTexture: new THREE.Uniform(t),
@@ -681,7 +679,7 @@ function initParticleData(particle: ParticleStoreStruct, offset: [number, number
             1,
             1,
             1,
-            (1 * (a ? a : 255)) / 255,
+            (1 * (a || 255)) / 255,
         ];
     });
 
@@ -875,7 +873,7 @@ class StaffCharLoader {
     public updateDisplayTexture(texture: THREE.Texture) {
         this.tex = texture;
         this.mat.uniforms.u_texture.value = texture;
-        const image = texture.image;
+        const { image } = texture;
         this.item.scale.set(image.width / this.itemWidth, image.height / this.itemHeight, 1);
     }
     public async transTo(textureUrl: string, direction: "prev" | "next" = "prev") {
@@ -888,14 +886,14 @@ class StaffCharLoader {
     }
     public animeEnter(direction: "prev" | "next") {
         const progress = { val: 0 };
-        const factor = "next" === direction ? 1 : -1;
+        const factor = direction === "next" ? 1 : -1;
         return anime({
             duration: 800,
             targets: progress,
             val: 1,
             easing: "easeOutQuart",
             update: () => {
-                this.item.position.x =  this.itemPosition.x + (1 - progress.val) * factor * this.itemTransOffset;
+                this.item.position.x = this.itemPosition.x + (1 - progress.val) * factor * this.itemTransOffset;
                 this.item.rotation.y = (1 - progress.val) * factor * 0.08;
                 this.mat.uniforms.opacity.value = progress.val;
                 const black = Math.max(2 * progress.val - 1, 0);
@@ -905,7 +903,7 @@ class StaffCharLoader {
     }
     public animeExit(direction: "prev" | "next") {
         const progress = { val: 0 };
-        const factor = "next" === direction ? 1 : -1;
+        const factor = direction === "next" ? 1 : -1;
         return anime({
             duration: 800,
             targets: progress,
@@ -967,19 +965,17 @@ class FireFlyLoader {
         const geo = new THREE.BufferGeometry();
         geo.setAttribute("position", this.aPosition);
         geo.setAttribute("opacity", this.aOpacity);
-        this.points = fireFlyArray.map((_value, index) => {
-            return {
-                x: positionBuffer[3 * index],
-                y: positionBuffer[3 * index + 1],
-                z: positionBuffer[3 * index + 2],
-                opacity: opacityBuffer[index],
-                size: 2,
-                speed: 0.1 * random(4, 8),
-                life: randLife(),
-                aPosition: positionBuffer.subarray(3 * index, 3 * index + 3),
-                aOpacity: opacityBuffer.subarray(index, index + 1),
-            };
-        });
+        this.points = fireFlyArray.map((_value, index) => ({
+            x: positionBuffer[3 * index],
+            y: positionBuffer[3 * index + 1],
+            z: positionBuffer[3 * index + 2],
+            opacity: opacityBuffer[index],
+            size: 2,
+            speed: 0.1 * random(4, 8),
+            life: randLife(),
+            aPosition: positionBuffer.subarray(3 * index, 3 * index + 3),
+            aOpacity: opacityBuffer.subarray(index, index + 1),
+        }));
         new THREE.TextureLoader().load(fireflyUrl, (t) => {
             const shaderMaterial = new THREE.ShaderMaterial({
                 uniforms: { uTexture: new THREE.Uniform(t) },
@@ -1060,16 +1056,16 @@ class PolygonLoader {
         this.getUpdatedTransform = () => undefined;
         this.updateTransform = () => {
             const transform = this.getUpdatedTransform() || { x: 0, y: 0, sc: 1 };
-            const x = transform.x;
-            const y = transform.y;
-            const sc = transform.sc;
+            const { x } = transform;
+            const { y } = transform;
+            const { sc } = transform;
             this.uOrigin.value = [x, y, sc];
             return this;
         };
         this.geometry = new THREE.IcosahedronGeometry(400, 1);
         this.uOpacity = new THREE.Uniform(this.globalOpacity);
         this.uOrigin = new THREE.Uniform([0, 0, 1]);
-        new THREE.TextureLoader().loadAsync(particleUrl).then(t => {
+        new THREE.TextureLoader().loadAsync(particleUrl).then((t) => {
             const color = new THREE.Uniform(new THREE.Color(0x968414));
             const texutre = new THREE.Uniform(t);
             const vertexShader = `
@@ -1107,7 +1103,7 @@ class PolygonLoader {
                         uOpacity: this.uOpacity,
                         uOrigin: this.uOrigin,
                     },
-                    vertexShader: vertexShader,
+                    vertexShader,
                     fragmentShader: fragmentShaderColor,
                     transparent: true,
                     depthTest: false,
@@ -1122,7 +1118,7 @@ class PolygonLoader {
                         uOpacity: this.uOpacity,
                         uOrigin: this.uOrigin,
                     },
-                    vertexShader: vertexShader,
+                    vertexShader,
                     fragmentShader: fragmentShaderTexture,
                     transparent: true,
                     depthTest: false,
@@ -1163,7 +1159,7 @@ class PolygonLoader {
     // eslint-disable-next-line class-methods-use-this
     public updatePolygonTransform(offset = 0) {
         PolygonLoader.instance.setTransform(() => {
-            if ("desktop" === responsiveModeHandler.mode) {
+            if (responsiveModeHandler.mode === "desktop") {
                 return {
                     x: 0.1 * -WebglContainer.instance.width,
                     y: 0.5 * WebglContainer.instance.height + (0.2 * (1 - offset) + 0.3) * PolygonLoader.instance.height,
@@ -1185,7 +1181,7 @@ class LqWebglContainer {
     private fitViewport: () => void;
     private update: () => void;
     private canvas: HTMLCanvasElement;
-    private scene: THREE.Scene;
+    public scene: THREE.Scene;
     private renderer: THREE.WebGLRenderer;
 
     constructor() {
@@ -1242,7 +1238,10 @@ class LqWebglContainer {
     }
 
     public static get instance(): LqWebglContainer {
-        return LqWebglContainer._instance || (LqWebglContainer._instance = new LqWebglContainer());
+        if (!LqWebglContainer._instance) {
+            LqWebglContainer._instance = new LqWebglContainer();
+        }
+        return LqWebglContainer._instance;
     }
 
     public randX() {
@@ -1253,20 +1252,32 @@ class LqWebglContainer {
     }
 }
 
-function generatePointLightDesktop() {
-    const t = LqWebglContainer.instance,
-        e = t.resoluteWidth,
-        n = t.resoluteHeight;
+interface PointLight {
+    position: [number, number, number];
+    disappearAt: number;
+    strength: number;
+}
+
+interface SpotLight {
+    position: [number, number, number];
+    lookAt: [number, number, number];
+    strength: number;
+}
+
+function generatePointLightDesktop() : PointLight {
+    const t = LqWebglContainer.instance;
+    const e = t.resoluteWidth;
+    const n = t.resoluteHeight;
     return {
         position: [1.1 * e, 0.8 * n, 0],
         disappearAt: 1.2 * n,
         strength: 0.3,
     };
 }
-function generateSpotLightDesktop() {
-    const t = LqWebglContainer.instance,
-        e = t.resoluteWidth,
-        n = t.resoluteHeight;
+function generateSpotLightDesktop(): SpotLight[] {
+    const t = LqWebglContainer.instance;
+    const e = t.resoluteWidth;
+    const n = t.resoluteHeight;
     return [
         {
             position: [1.3 * e, 1 * n, 0],
@@ -1290,20 +1301,20 @@ function generateSpotLightDesktop() {
         },
     ];
 }
-function generatePointLightPhone() {
-    const t = LqWebglContainer.instance,
-        e = t.resoluteWidth,
-        n = t.resoluteHeight;
+function generatePointLightPhone(): PointLight {
+    const t = LqWebglContainer.instance;
+    const e = t.resoluteWidth;
+    const n = t.resoluteHeight;
     return {
         position: [0 * e, 1.1 * n, 0],
         disappearAt: 1.2 * n,
         strength: 0.3,
     };
 }
-function generateSpotLightPhone() {
-    const t = LqWebglContainer.instance,
-        e = t.resoluteWidth,
-        n = t.resoluteHeight;
+function generateSpotLightPhone(): SpotLight[] {
+    const t = LqWebglContainer.instance;
+    const e = t.resoluteWidth;
+    const n = t.resoluteHeight;
     return [
         {
             position: [-0.1 * e, 1.4 * n, 0],
@@ -1327,15 +1338,15 @@ function generateSpotLightPhone() {
         },
     ];
 }
-function updateParticleProperties(point: SmokePointStruct, arr: [number, number, number]) {
-    const n = arr[0];
+function updateParticleProperties(point: SmokePointStruct, position: [number, number, number]) {
+    const n = position[0];
 
     point.x += (Math.random() + 0.1) * Math.sign(n - point.x - 0.5 * LqWebglContainer.instance.resoluteWidth);
     point.y += Math.random() + 0.05;
 
     if (
-        Math.abs(point.x) > 0.6 * LqWebglContainer.instance.resoluteWidth ||
-        Math.abs(point.y) > 0.7 * LqWebglContainer.instance.resoluteHeight
+        Math.abs(point.x) > 0.6 * LqWebglContainer.instance.resoluteWidth
+        || Math.abs(point.y) > 0.7 * LqWebglContainer.instance.resoluteHeight
     ) {
         point.opacity = Math.max(0, point.opacity - 0.01);
         if (point.opacity <= 0) {
@@ -1371,10 +1382,10 @@ class SomkeLoader {
     private static _instance: SomkeLoader;
     private onResize: () => void;
     private update: () => void;
-    private uSpotLights: THREE.Uniform | null;
-    private uPointLight: THREE.Uniform | null;
-    private uOpacity: THREE.Uniform;
-    private uResolution: THREE.Uniform;
+    private uSpotLights: THREE.Uniform<SpotLight[]> | null;
+    private uPointLight: THREE.Uniform<PointLight> | null;
+    private uOpacity: THREE.Uniform<number>;
+    private uResolution: THREE.Uniform<number>;
     private aPosition: THREE.BufferAttribute;
     private aRotate: THREE.BufferAttribute;
     private aOpacity: THREE.BufferAttribute;
@@ -1399,9 +1410,7 @@ class SomkeLoader {
 
             const size = Math.min(LqWebglContainer.instance.width, LqWebglContainer.instance.height);
             this.aSize.set(
-                map(this.aSize.array, () => {
-                    return (Math.random() + 1.5) * size;
-                })
+                map(this.aSize.array, () => (Math.random() + 1.5) * size)
             );
             this.aSize.needsUpdate = true;
         };
@@ -1422,53 +1431,41 @@ class SomkeLoader {
         const pointArray = fill(new Array(t), 0);
 
         const positionBuffer = Float32Array.from(
-            flattenDepth(
-                pointArray.map(() => {
-                    return [LqWebglContainer.instance.randX(), LqWebglContainer.instance.randY(), 0];
-                }), 1
-            )
+            flattenDepth(pointArray.map(() => [LqWebglContainer.instance.randX(), LqWebglContainer.instance.randY(), 0]), 1)
         );
 
         this.aPosition = new THREE.BufferAttribute(positionBuffer, 3);
         geo.setAttribute("position", this.aPosition);
 
-        const a = Float32Array.from(pointArray).map(() => {
-            return 2 * Math.random() * Math.PI;
-        });
+        const rotateBuffer = Float32Array.from(pointArray).map(() => 2 * Math.random() * Math.PI);
 
-        this.aRotate = new THREE.BufferAttribute(a, 1);
+        this.aRotate = new THREE.BufferAttribute(rotateBuffer, 1);
         geo.setAttribute("rotate", this.aRotate);
 
-        const o = Float32Array.from(pointArray).map(() => {
-            return 0;
-        });
+        const opacityBuffer = Float32Array.from(pointArray).map(() => 0);
 
-        this.aOpacity = new THREE.BufferAttribute(o, 1);
+        this.aOpacity = new THREE.BufferAttribute(opacityBuffer, 1);
         geo.setAttribute("opacity", this.aOpacity);
 
-        const s = Float32Array.from(pointArray).map(() => {
-            return 1;
-        });
+        const s = Float32Array.from(pointArray).map(() => 1);
 
         this.aSize = new THREE.BufferAttribute(s, 1);
         geo.setAttribute("size", this.aSize);
 
-        this.points = pointArray.map((val, e) => {
-            return {
-                x: positionBuffer[3 * e],
-                y: positionBuffer[3 * e + 1],
-                rotate: a[e],
-                opacity: o[e],
-                size: s[e],
-                vRtt: Math.random() - 0.5,
-                bufferPosition: positionBuffer.subarray(3 * e, 3 * e + 3),
-                bufferRotate: a.subarray(e, e + 1),
-                bufferOpacity: o.subarray(e, e + 1),
-                bufferSize: s.subarray(e, e + 1),
-            };
-        });
+        this.points = pointArray.map((val, e) => ({
+            x: positionBuffer[3 * e],
+            y: positionBuffer[3 * e + 1],
+            rotate: rotateBuffer[e],
+            opacity: opacityBuffer[e],
+            size: s[e],
+            vRtt: Math.random() - 0.5,
+            bufferPosition: positionBuffer.subarray(3 * e, 3 * e + 3),
+            bufferRotate: rotateBuffer.subarray(e, e + 1),
+            bufferOpacity: opacityBuffer.subarray(e, e + 1),
+            bufferSize: s.subarray(e, e + 1),
+        }));
 
-        const l = generateSpotLightDesktop();
+        const spotLights = generateSpotLightDesktop();
         new THREE.TextureLoader().load(smokeUrl, (texture) => {
             const material = new THREE.ShaderMaterial({
                 uniforms: {
@@ -1494,7 +1491,7 @@ class SomkeLoader {
                 }
                 `,
                 fragmentShader: `
-                #define SPOT_LIGHTS_LENGTH ${l.length}
+                #define SPOT_LIGHTS_LENGTH ${spotLights.length}
                 struct SpotLight {
                     vec3  position;
                     vec3  lookAt;
@@ -1544,13 +1541,13 @@ class SomkeLoader {
                     }
                     gl_FragColor = vec4(min(result, 1.0) * texture.rgb, texture.a * uOpacity * vOpacity);
                 }
-                `,    
+                `,
                 transparent: true,
                 depthTest: false,
             });
 
             const points = new THREE.Points(geo, material);
-            WebglContainer.instance.scene.add(points);
+            LqWebglContainer.instance.scene.add(points);
             this.fire();
         });
     }
@@ -1577,10 +1574,8 @@ class SomkeLoader {
             easing: "linear",
             duration: 500,
             complete: () => {
-                self.stop();
-                requestAnimationFrame(() => {
-                    return LqWebglContainer.instance.stop();
-                });
+                this.stop();
+                requestAnimationFrame(() => LqWebglContainer.instance.stop());
             },
         });
     }
@@ -1602,31 +1597,60 @@ class SomkeLoader {
     }
 
     public static get instance(): SomkeLoader {
-        return SomkeLoader._instance || (SomkeLoader._instance = new SomkeLoader());
+        if (!SomkeLoader._instance) {
+            SomkeLoader._instance = new SomkeLoader();
+        }
+        return SomkeLoader._instance;
     }
 }
 
 const staffInfo = [
-    { "name":"阿米娅", "nameEn":"AMIYA", "code":"ROO1", "intro":"罗德岛的公开领袖，在内部拥有最高执行权。虽然，从外表上看起来仅仅是个不成熟的少女，实际上，她却是深受大家信任的合格的领袖。现在，阿米娅正带领着罗德岛，为了感染者的未来，为了让这片大地挣脱矿石病的阴霾而不懈努力。", "cv":"黑泽朋世", "profession":"caster", "displayUrl":"arknights/official/pic/20210112/f40da70e0e3d2c89a89aa97c44b6498c.png", "camp":"RHODES_ISLAND" },
-    { "name":"凯尔希", "nameEn":"KAL'TSIT", "code":"B003", "intro":"罗德岛最高管理者之一，阿米娅的直接辅导者。\n罗德岛医疗部门的总负责人。\n作为罗德岛的老成员，凯尔希医生是在阿米娅背后最稳固的援护者。", "cv":"日笠阳子", "profession":"medic", "displayUrl":"arknights/official/pic/20210112/f5d1be51761704001cc9e7bd7529c849.png", "camp":"RHODES_ISLAND" },
-    { "name":"红", "nameEn":"PROJEKT RED", "code":"SW01", "intro":"红，身份不明，履历缺失，由凯尔希医生接收、监护并担保。\n于机动作战，特种作战与隐秘作战中表现出极高天赋，成绩斐然。\n现于凯尔希医生的指导下，作为特种干员为罗德岛提供服务。", "cv":"小清水亚美", "profession":"special", "displayUrl":"arknights/official/pic/20210112/eec21ae5cb8cce8872b07926a46eb2ed.png", "camp":"RHODES_ISLAND" },
-    { "name":"杜宾", "nameEn":"DOBERMANN", "code":"R100", "intro":"前玻利瓦尔军人，加入罗德岛后担任教官，主要负责基层和新晋干员培训，必要时刻，也会负责对俘虏的审讯。 \n熟悉各种规模的军事行动，自身作为士兵的素养也极高，作为近卫干员，在第一线带领队伍冲锋陷阵。", "cv":"种崎敦美", "profession":"warrior", "displayUrl":"arknights/official/pic/20210112/774aa017f2a8a5654d661cda1051beea.png", "camp":"RHODES_ISLAND" },
-    { "name":"临光", "nameEn":"NEARL", "code":"F002", "intro":"临光，前卡西米尔耀骑士，感染者援助团体“使徒”的一员。在掩护己方队员、机动作战、歼灭战与开阔地带作战中体现出极高的战斗技巧和个人军事素养。\n现于罗德岛作为重装干员行动，并于现场提供战术指挥支援。", "cv":"佐仓绫音", "profession":"tank", "displayUrl":"arknights/official/pic/20210112/18469152aa1d779c037a259c61e60671.png", "camp":"RHODES_ISLAND" },
-    { "name":"赫默", "nameEn":"SILENCE", "code":"RL01", "intro":"赫默，莱茵生命有限公司源石有关项目研究员，曾主管数项未知应用研究，同期亦主持数个矿石病临床试验项目。 \n现于罗德岛为多项行动提供战场医疗救护服务。", "cv":"鬼头明里", "profession":"medic", "displayUrl":"arknights/official/pic/20210112/21c96f723a4638c0103798c65b4f5195.png", "camp":"RHINE" },
-    { "name":"伊芙利特", "nameEn":"IFRIT", "code":"RL03", "intro":"伊芙利特，前莱茵生命医疗对象，重度感染者。拥有极高的源石适应性，伴随有多发性点火现象。进入莱茵生命前的履历缺失。\n现于罗德岛接受治疗，由医疗干员赫默担任监护与担保人。", "cv":"花守由美里", "profession":"caster", "displayUrl":"arknights/official/pic/20210112/5f84a8f3c8deded1bf8dfc28b2bd7146.png", "camp":"RHINE" },
-    { "name":"白面鸮", "nameEn":"PTILOPSIS", "code":"RL04", "intro":"白面鸮，前莱茵生命公司，数据维护专员。在医疗类源石技艺领域取得不菲成就，于医疗数据维护，常规医疗方案应用，多项目医疗行为等相关领域，拥有丰富经验。 \n现于罗德岛担任医疗干员，亦就职于医疗部门，某临床实验小组。同时，为罗德岛提供若干项医疗项目的相关辅助工作。", "cv":"金元寿子", "profession":"medic", "displayUrl":"arknights/official/pic/20210112/aad79b4cc62d3d7adc2948a0990ebca1.png", "camp":"RHINE" },
-    { "name":"德克萨斯", "nameEn":"TEXAS", "code":"PL02", "intro":"企鹅物流员工，单兵作战能力出类拔萃。 \n于合约期内任企鹅物流驻罗德岛联络人员，同时为罗德岛的多项行动提供协助。", "cv":"田所梓", "profession":"pioneer", "displayUrl":"arknights/official/pic/20210112/416445fede74d8d23c6d5f2476d827b2.png", "camp":"PENGUIN_LOGISTICS" },
-    { "name":"能天使", "nameEn":"EXUSIAI", "code":"PL03", "intro":"能天使，拉特兰公民，适用拉特兰一至十三项公民权益。企鹅物流公司成员。从事秘密联络，武装押运等非公开活动，推测身份：信使。于合约期内任企鹅物流驻罗德岛联络人员，同时为罗德岛多项行动提供协助。", "cv":"石见舞菜香", "profession":"sniper", "displayUrl":"arknights/official/pic/20210112/ab532ac6f4df46164f9b097f2f6b677d.png", "camp":"PENGUIN_LOGISTICS" },
-    { "name":"可颂", "nameEn":"CROISSANT", "code":"PL04", "intro":"企鹅物流员工，于合约期内任企鹅物流驻罗德岛外派干员。 擅长防守，能同时牵制数个敌人，并拥有怪力，能用巨锤轻松击飞瘦弱的敌人。", "cv":"久保百合花", "profession":"tank", "displayUrl":"arknights/official/pic/20210112/8752c3a0e09ab67178acebe117d536c1.png", "camp":"PENGUIN_LOGISTICS" },
-    { "name":"陈", "nameEn":"CHEN", "code":"LM04", "intro":"陈，龙门高级警司，龙门近卫局特别督查组组长，毕业于维多利亚皇家近卫学校，成绩优异，表现突出。在龙门近卫局供职期间，力主取缔龙门境内非法活动，对抗暴力犯罪和有组织犯罪，追缉武装逃犯与国际重犯等行动，并取得多项重大成果。\n现作为特别人员协助罗德岛行动，并为现场提供战术指挥支援。", "cv":"石上静香", "profession":"warrior", "displayUrl":"arknights/official/pic/20210112/87f341583ec61b4ce4f5b765464fe89d.png", "camp":"LUNGMEN" },
-    { "name":"星熊", "nameEn":"HOSHIGUMA", "code":"LM05", "intro":"星熊，龙门近卫局特别任务组精英干员。存在数项指控记录。\n经龙门总督魏彦吾交涉，龙门近卫局依星熊的优异能力与良好表现，破格将其吸纳进近卫局特别督察组。在处理高危险性犯罪事件、要员保护、灾害紧急救援等领域表现出较高专业性。\n现作为重装干员协助罗德岛行动，并为现场提供战术执行与指挥支援。", "cv":"安野希世乃", "profession":"tank", "displayUrl":"arknights/official/pic/20210112/22ab7b3789969d9c381b82d0f24c3c83.png", "camp":"LUNGMEN" },
+    {
+        name: "阿米娅", nameEn: "AMIYA", code: "ROO1", intro: "罗德岛的公开领袖，在内部拥有最高执行权。虽然，从外表上看起来仅仅是个不成熟的少女，实际上，她却是深受大家信任的合格的领袖。现在，阿米娅正带领着罗德岛，为了感染者的未来，为了让这片大地挣脱矿石病的阴霾而不懈努力。", cv: "黑泽朋世", profession: "caster", displayUrl: "arknights/official/pic/20210112/f40da70e0e3d2c89a89aa97c44b6498c.png", camp: "RHODES_ISLAND",
+    },
+    {
+        name: "凯尔希", nameEn: "KAL'TSIT", code: "B003", intro: "罗德岛最高管理者之一，阿米娅的直接辅导者。\n罗德岛医疗部门的总负责人。\n作为罗德岛的老成员，凯尔希医生是在阿米娅背后最稳固的援护者。", cv: "日笠阳子", profession: "medic", displayUrl: "arknights/official/pic/20210112/f5d1be51761704001cc9e7bd7529c849.png", camp: "RHODES_ISLAND",
+    },
+    {
+        name: "红", nameEn: "PROJEKT RED", code: "SW01", intro: "红，身份不明，履历缺失，由凯尔希医生接收、监护并担保。\n于机动作战，特种作战与隐秘作战中表现出极高天赋，成绩斐然。\n现于凯尔希医生的指导下，作为特种干员为罗德岛提供服务。", cv: "小清水亚美", profession: "special", displayUrl: "arknights/official/pic/20210112/eec21ae5cb8cce8872b07926a46eb2ed.png", camp: "RHODES_ISLAND",
+    },
+    {
+        name: "杜宾", nameEn: "DOBERMANN", code: "R100", intro: "前玻利瓦尔军人，加入罗德岛后担任教官，主要负责基层和新晋干员培训，必要时刻，也会负责对俘虏的审讯。 \n熟悉各种规模的军事行动，自身作为士兵的素养也极高，作为近卫干员，在第一线带领队伍冲锋陷阵。", cv: "种崎敦美", profession: "warrior", displayUrl: "arknights/official/pic/20210112/774aa017f2a8a5654d661cda1051beea.png", camp: "RHODES_ISLAND",
+    },
+    {
+        name: "临光", nameEn: "NEARL", code: "F002", intro: "临光，前卡西米尔耀骑士，感染者援助团体“使徒”的一员。在掩护己方队员、机动作战、歼灭战与开阔地带作战中体现出极高的战斗技巧和个人军事素养。\n现于罗德岛作为重装干员行动，并于现场提供战术指挥支援。", cv: "佐仓绫音", profession: "tank", displayUrl: "arknights/official/pic/20210112/18469152aa1d779c037a259c61e60671.png", camp: "RHODES_ISLAND",
+    },
+    {
+        name: "赫默", nameEn: "SILENCE", code: "RL01", intro: "赫默，莱茵生命有限公司源石有关项目研究员，曾主管数项未知应用研究，同期亦主持数个矿石病临床试验项目。 \n现于罗德岛为多项行动提供战场医疗救护服务。", cv: "鬼头明里", profession: "medic", displayUrl: "arknights/official/pic/20210112/21c96f723a4638c0103798c65b4f5195.png", camp: "RHINE",
+    },
+    {
+        name: "伊芙利特", nameEn: "IFRIT", code: "RL03", intro: "伊芙利特，前莱茵生命医疗对象，重度感染者。拥有极高的源石适应性，伴随有多发性点火现象。进入莱茵生命前的履历缺失。\n现于罗德岛接受治疗，由医疗干员赫默担任监护与担保人。", cv: "花守由美里", profession: "caster", displayUrl: "arknights/official/pic/20210112/5f84a8f3c8deded1bf8dfc28b2bd7146.png", camp: "RHINE",
+    },
+    {
+        name: "白面鸮", nameEn: "PTILOPSIS", code: "RL04", intro: "白面鸮，前莱茵生命公司，数据维护专员。在医疗类源石技艺领域取得不菲成就，于医疗数据维护，常规医疗方案应用，多项目医疗行为等相关领域，拥有丰富经验。 \n现于罗德岛担任医疗干员，亦就职于医疗部门，某临床实验小组。同时，为罗德岛提供若干项医疗项目的相关辅助工作。", cv: "金元寿子", profession: "medic", displayUrl: "arknights/official/pic/20210112/aad79b4cc62d3d7adc2948a0990ebca1.png", camp: "RHINE",
+    },
+    {
+        name: "德克萨斯", nameEn: "TEXAS", code: "PL02", intro: "企鹅物流员工，单兵作战能力出类拔萃。 \n于合约期内任企鹅物流驻罗德岛联络人员，同时为罗德岛的多项行动提供协助。", cv: "田所梓", profession: "pioneer", displayUrl: "arknights/official/pic/20210112/416445fede74d8d23c6d5f2476d827b2.png", camp: "PENGUIN_LOGISTICS",
+    },
+    {
+        name: "能天使", nameEn: "EXUSIAI", code: "PL03", intro: "能天使，拉特兰公民，适用拉特兰一至十三项公民权益。企鹅物流公司成员。从事秘密联络，武装押运等非公开活动，推测身份：信使。于合约期内任企鹅物流驻罗德岛联络人员，同时为罗德岛多项行动提供协助。", cv: "石见舞菜香", profession: "sniper", displayUrl: "arknights/official/pic/20210112/ab532ac6f4df46164f9b097f2f6b677d.png", camp: "PENGUIN_LOGISTICS",
+    },
+    {
+        name: "可颂", nameEn: "CROISSANT", code: "PL04", intro: "企鹅物流员工，于合约期内任企鹅物流驻罗德岛外派干员。 擅长防守，能同时牵制数个敌人，并拥有怪力，能用巨锤轻松击飞瘦弱的敌人。", cv: "久保百合花", profession: "tank", displayUrl: "arknights/official/pic/20210112/8752c3a0e09ab67178acebe117d536c1.png", camp: "PENGUIN_LOGISTICS",
+    },
+    {
+        name: "陈", nameEn: "CHEN", code: "LM04", intro: "陈，龙门高级警司，龙门近卫局特别督查组组长，毕业于维多利亚皇家近卫学校，成绩优异，表现突出。在龙门近卫局供职期间，力主取缔龙门境内非法活动，对抗暴力犯罪和有组织犯罪，追缉武装逃犯与国际重犯等行动，并取得多项重大成果。\n现作为特别人员协助罗德岛行动，并为现场提供战术指挥支援。", cv: "石上静香", profession: "warrior", displayUrl: "arknights/official/pic/20210112/87f341583ec61b4ce4f5b765464fe89d.png", camp: "LUNGMEN",
+    },
+    {
+        name: "星熊", nameEn: "HOSHIGUMA", code: "LM05", intro: "星熊，龙门近卫局特别任务组精英干员。存在数项指控记录。\n经龙门总督魏彦吾交涉，龙门近卫局依星熊的优异能力与良好表现，破格将其吸纳进近卫局特别督察组。在处理高危险性犯罪事件、要员保护、灾害紧急救援等领域表现出较高专业性。\n现作为重装干员协助罗德岛行动，并为现场提供战术执行与指挥支援。", cv: "安野希世乃", profession: "tank", displayUrl: "arknights/official/pic/20210112/22ab7b3789969d9c381b82d0f24c3c83.png", camp: "LUNGMEN",
+    },
 ];
 
 const particleDataLoader = ({ fileName, key }) => {
-    /* eslint-disable @typescript-eslint/no-var-requires */
+    // eslint-disable-next-line global-require, @typescript-eslint/no-var-requires, import/no-dynamic-require
     const particleData = require(`./arknights/static/data/${fileName}`);
     return {
-        key: key,
+        key,
         model: initParticleData(particleData),
     };
 };
@@ -1647,9 +1671,7 @@ export async function main() {
     const meshParticle = initParticleData({
         size: { width: 820, height: 460 },
         count: 1008,
-        points: fill(new Array(1008), 0).map((_val, idx) => {
-            return [(idx % 42) * 20, 20 * Math.floor(idx / 42), 126, 126, 126, 255];
-        }),
+        points: fill(new Array(1008), 0).map((_val, idx) => [(idx % 42) * 20, 20 * Math.floor(idx / 42), 126, 126, 126, 255]),
     });
     ParticleLoader.main.setMode(EffectEnum.SPREAD).setModel(meshParticle).appear().fire();
 
@@ -1664,7 +1686,7 @@ export async function main() {
         { key: "infected", fileName: "story-4-infected.data.json" },
         { key: "nomadic_city", fileName: "story-5-nomadic_city.data.json" },
         { key: "rhodes_island", fileName: "story-6-rhodes_island.data.json" },
-    ].map(particleDataLoader);    
+    ].map(particleDataLoader);
 
     const pTitleData = [
         { key: "infomation", fileName: "title-information.data.json" },
@@ -1673,20 +1695,18 @@ export async function main() {
         { key: "world", fileName: "title-world.data.json" },
     ].map(particleDataLoader);
     const fontSize = parseInt(window.getComputedStyle(document.body).fontSize, 10);
-    ParticleLoader.sub.setMode(EffectEnum.FIXED).setTransform(() => {
-        return {
-            x: Math.round(5.875 * fontSize - 0.3 * WebglContainer.instance.width),
-            y: Math.round(0.5 * WebglContainer.instance.height - 3.5 * fontSize),
-            sc: fontSize / 16,
-            pointSize: 1,
-        };
-    }).setModel(pTitleData[0].model).appear();
+    ParticleLoader.sub.setMode(EffectEnum.FIXED).setTransform(() => ({
+        x: Math.round(5.875 * fontSize - 0.3 * WebglContainer.instance.width),
+        y: Math.round(0.5 * WebglContainer.instance.height - 3.5 * fontSize),
+        sc: fontSize / 16,
+        pointSize: 1,
+    })).setModel(pTitleData[0].model).appear();
 
     const faction = {
-        "RHODES_ISLAND": pData.find(t => t.key === "rhodes"),
-        "RHINE": pData.find(t => t.key === "rhine"),
-        "PENGUIN_LOGISTICS": pData.find(t => t.key === "penguin"),
-        "LUNGMEN": pData.find(t => t.key === "lungmen"),
+        RHODES_ISLAND: pData.find((t) => t.key === "rhodes"),
+        RHINE: pData.find((t) => t.key === "rhine"),
+        PENGUIN_LOGISTICS: pData.find((t) => t.key === "penguin"),
+        LUNGMEN: pData.find((t) => t.key === "lungmen"),
     };
 
     const draw = new StaffCharLoader(document.querySelector(".staffCharDraw"));

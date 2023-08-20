@@ -4,7 +4,7 @@ module.exports = {
         "commonjs": true,
         "es2021": true
     },
-    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "airbnb-typescript/base"],
+    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "airbnb-base", "airbnb-typescript/base"],
     "parser": "@typescript-eslint/parser",
     "plugins": ["@typescript-eslint", "import"],
     "root": true,
@@ -26,5 +26,11 @@ module.exports = {
             "enums": "always-multiline",
             "functions": "never"
         }],
+        "max-classes-per-file": ["off"],
+        "no-param-reassign": ["off"],
+        "max-len": ["off"],
+        "no-underscore-dangle": ["off"],
+        "no-plusplus": ["off"],
+        "no-restricted-syntax": ["off"],
     }
 }
