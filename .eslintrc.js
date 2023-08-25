@@ -26,7 +26,6 @@ module.exports = {
             "enums": "always-multiline",
             "functions": "never"
         }],
-        "max-classes-per-file": ["off"],
         "no-param-reassign": ["off"],
         "max-len": ["off"],
         "no-underscore-dangle": ["off"],

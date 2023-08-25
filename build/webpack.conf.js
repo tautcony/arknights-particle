@@ -28,7 +28,7 @@ const babelConfig = {
 module.exports = {
     mode: "production",
     target: "browserslist",
-    entry: path.join(__dirname, "..", "arknights.ts"),
+    entry: path.join(__dirname, "..", "src", "index.ts"),
     output: {
         filename: "dist/arknights.min.js",
         path: path.resolve(__dirname, ".."),
@@ -41,7 +41,9 @@ module.exports = {
         rules: [
             {
                 test: /.tsx?$/,
-                include: path.resolve(__dirname, "..", "arknights.ts"),
+                include: [
+                    path.resolve(__dirname, "..", "src"),
+                ],
                 use: [
                     {
                         loader: "babel-loader?cacheDirectory",

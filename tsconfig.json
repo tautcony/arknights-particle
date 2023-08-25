@@ -21,7 +21,7 @@
         ]
     },
     "include": [
-        "arknights.ts",
+        "src"
     ],
     "exclude": [
         "node_modules",

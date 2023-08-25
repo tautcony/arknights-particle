@@ -50,7 +50,7 @@
     "dev": "npx webpack serve --static . --config build/webpack.dev.conf.js",
     "build": "npx webpack --config build/webpack.prod.conf.js",
     "start": "http-server -c-1",
-    "lint": "npx eslint arknights.ts"
+    "lint": "npx eslint src"
   },
   "browserslist": [
     "> 1%",
