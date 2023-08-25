@@ -31,6 +31,5 @@ module.exports = {
         "max-len": ["off"],
         "no-underscore-dangle": ["off"],
         "no-plusplus": ["off"],
-        "no-restricted-syntax": ["off"],
     }
 }

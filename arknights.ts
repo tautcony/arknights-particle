@@ -131,9 +131,9 @@ class AnimationHandler {
     public update(ts: number) {
         if (!this.lastUpdated || ts - this.lastUpdated > 1e3 / this.fps) {
             this.lastUpdated = ts;
-            for (const handler of this.queue) {
+            this.queue.forEach((handler) => {
                 handler(ts);
-            }
+            });
         }
         this.rafId = window.requestAnimationFrame(this.update.bind(this));
     }
@@ -154,9 +154,9 @@ class ResizeHandler {
         window.addEventListener(
             "resize",
             throttle(() => {
-                for (const handler of this.queue) {
+                this.queue.forEach((handler) => {
                     handler();
-                }
+                });
             })
         );
         return this;
@@ -196,9 +196,9 @@ class ResponsiveModeHandler {
                 updated = true;
             }
             if (updated) {
-                for (const handler of this.queue) {
+                this.queue.forEach((handler) => {
                     handler(this.mode);
-                }
+                });
             }
         });
         return this;
@@ -298,7 +298,7 @@ class TouchableHandler {
     public init() {
         this.clientX = 0.5 * WebglContainer.instance.width;
         this.clientY = 0.5 * WebglContainer.instance.height;
-        for (const eventType of ["mousemove", "touchstart", "touchmove"]) {
+        ["mousemove", "touchstart", "touchmove"].forEach((eventType) => {
             document.addEventListener(
                 eventType,
                 throttle((evt: MouseEvent | TouchEvent) => {
@@ -320,14 +320,13 @@ class TouchableHandler {
                     } else {
                         targets = [];
                     }
+                    const tagNames = ["A", "BUTTON", "INPUT"];
                     let flag = false;
-                    for (let o = 0; o < 3; ++o) {
-                        const s = targets[o] as HTMLElement;
-                        const n = s.dataset;
-                        const cursorValue = n === null || undefined === n ? undefined : n.cursor;
-                        const tagNames = ["A", "BUTTON", "INPUT"];
+                    for (let i = 0; i < 3; ++i) {
+                        const ele = targets[i] as HTMLElement;
+                        const cursorValue = ele?.dataset?.cursor;
 
-                        if (cursorValue === "pointer" || tagNames.includes(s.tagName)) {
+                        if (cursorValue === "pointer" || tagNames.includes(ele?.tagName)) {
                             flag = true;
                             break;
                         }
@@ -336,9 +335,9 @@ class TouchableHandler {
                 }),
                 { passive: true }
             );
-        }
+        });
 
-        for (const eventType of ["touchend", "mouseup"]) {
+        ["touchend", "mouseup"].forEach((eventType) => {
             document.addEventListener(
                 eventType,
                 throttle(() => {
@@ -350,7 +349,7 @@ class TouchableHandler {
                 }),
                 { passive: true }
             );
-        }
+        });
         resizeHandler.add(this.resize.bind(this));
         return this;
     }
@@ -529,9 +528,9 @@ class ParticleLoader {
         };
         this.update = () => {
             this.updateTransform();
-            for (const particle of this.particles) {
+            this.particles.forEach((particle) => {
                 ParticalEffect[this.mode](particle, this.model, this.transform);
-            }
+            });
             this.aPosition.needsUpdate = true;
             this.aColor.needsUpdate = true;
         };
@@ -936,7 +935,7 @@ class FireFlyLoader {
         const randLife = () => random(60, 1200);
 
         this.update = () => {
-            for (const point of this.points) {
+            this.points.forEach((point) => {
                 if (point.life--) {
                     point.y += point.speed;
                     if (point.life < 30) {
@@ -953,7 +952,7 @@ class FireFlyLoader {
                 }
                 point.aPosition.set([point.x, point.y, point.z]);
                 point.aOpacity.set([point.opacity]);
-            }
+            });
             this.aPosition.needsUpdate = true;
             this.aOpacity.needsUpdate = true;
         };
@@ -1418,9 +1417,9 @@ class SomkeLoader {
         this.update = () => {
             this.uResolution.value = 0.5;
 
-            for (const point of this.points) {
+            this.points.forEach((point) => {
                 updateParticleProperties(point, this.uPointLight.value.position);
-            }
+            });
 
             this.aPosition.needsUpdate = true;
             this.aOpacity.needsUpdate = true;
