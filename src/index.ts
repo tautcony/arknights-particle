@@ -11,6 +11,7 @@ import AnimationFrameHandler from "./handlers/AnimationFrameHandler";
 import ResizeEventHandler from "./handlers/ResizeEventHandler";
 import ResponsiveModeHandler from "./handlers/ResponsiveModeHandler";
 import InteractiveTouchHandler from "./handlers/InteractiveTouchHandler";
+import CursorHandler from "./handlers/CursorHandler";
 import MainWebglContainer from "./containers/MainWebglContainer";
 
 import EffectEnum from "./effect/EffectEnum";
@@ -28,6 +29,7 @@ const responsiveModeHandler = new ResponsiveModeHandler(resizeEventHandler);
 const mainWebglContainer = new MainWebglContainer(animationFrameHandler, responsiveModeHandler);
 const lqWebglContainer = new LqWebglContainer(mainWebglContainer.camera, animationFrameHandler);
 const interactiveTouchHandler = new InteractiveTouchHandler(mainWebglContainer, responsiveModeHandler, resizeEventHandler);
+const cursorHandler = new CursorHandler(interactiveTouchHandler, responsiveModeHandler, animationFrameHandler);
 
 /* Notes:
 Mi=THREE ue=anime
@@ -131,6 +133,7 @@ export function init() {
     resizeEventHandler.init();
     responsiveModeHandler.init();
     interactiveTouchHandler.init();
+    cursorHandler.init();
 }
 
 export function background() {

@@ -5,13 +5,13 @@ import ResizeEventHandler from "./ResizeEventHandler";
 
 // qi
 export default class InteractiveTouchHandler {
-    private x = 0;
-    private y = 0;
-    private interactive = false;
-    private touchable = false;
+    public x = 0;
+    public y = 0;
+    public clientX = 0;
+    public clientY = 0;
+    public interactive = false;
+    public touchable = false;
 
-    private clientX = 0;
-    private clientY = 0;
     private wegblContainer: MainWebglContainer;
     private responsiveModeHandler: ResponsiveModeHandler;
     private resizeEventHandler: ResizeEventHandler;

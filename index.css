@@ -1,0 +1,65 @@
+html {
+    font-size: 13px;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    background-color: #111111;
+    user-select: none;
+    font-family: sans-serif;
+}
+
+body {
+    background-image: url(arknights/static/pc-bg.24aaaa1654f269624896.jpg);
+    background-size: cover;
+    background-position: center bottom;
+}
+
+body {
+    cursor: url(arknights/static/cursor-inner.1d69419cb78ed4579ad9.png) 3 3,
+    default;
+}
+
+.ako-cursor-container {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.ako-cursor-container .ako-cursor-inner,
+.ako-cursor-container .ako-cursor-outer,
+.ako-cursor-container .ako-cursor-effect {
+    position: fixed;
+    border-radius: 50%;
+}
+
+.ako-cursor-container .ako-cursor-outer {
+    z-index: 999999;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #cccccc;
+    transition: background-color 0.3s, width 0.3s, height 0.3s;
+}
+
+.ako-cursor-container .ako-cursor-effect {
+    opacity: 0;
+    z-index: 999998;
+    width: 80px;
+    height: 80px;
+    border: 4px solid #cccccc;
+}
+
+canvas.staffCharDraw,
+canvas#lq-webgl,
+canvas#webgl {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
