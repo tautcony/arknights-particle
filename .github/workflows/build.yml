@@ -35,6 +35,7 @@ jobs:
           cp -r arknights _site/
           cp -r dist _site/
           cp index.html _site/
+          cp index.css _site/
           cp LICENSE _site/
           cp README.md _site/
 
