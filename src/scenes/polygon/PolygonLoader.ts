@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import anime from "animejs/lib/anime.es";
 
 import TransformationData from "../../effect/TransformationData";
 import MainWebglContainer from "../../containers/MainWebglContainer";
@@ -137,6 +138,19 @@ export default class PolygonLoader {
     public setTransform(t: () => TransformationData) {
         this.getUpdatedTransform = t;
         return this;
+    }
+
+    public fadeIn() {
+        const n = { val: 0 };
+        anime({
+            targets: n,
+            val: 1,
+            duration: 1200,
+            easing: "easeOutCubic",
+            update: () => {
+                this.updatePolygonTransform(n.val);
+            },
+        });
     }
 
     // eslint-disable-next-line class-methods-use-this

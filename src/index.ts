@@ -138,7 +138,8 @@ export function init() {
 
 export function background() {
     const polygon = new PolygonLoader(mainWebglContainer, animationFrameHandler, responsiveModeHandler);
-    polygon.appear().updatePolygonTransform(1);
+    polygon.fire().appear();
+    polygon.fadeIn();
 
     const firefly = new FireFlyLoader(mainWebglContainer, animationFrameHandler);
     firefly.appear();
@@ -202,10 +203,10 @@ export async function main() {
         animationFrameHandler,
         resizeEventHandler
     );
-    // await draw.getPreloadTasks(staffInfo.map(t => t.displayUrl || ""));
+    draw.add();
+    // await draw.getPreloadTasks(staffInfo.map((t) => t.displayUrl || ""));
     await draw.init(staffInfo[0].displayUrl);
     draw.resetMode(responsiveModeHandler.mode);
-    draw.add();
 
     responsiveModeHandler.add(draw.resetMode.bind(draw));
     setInterval(() => {
