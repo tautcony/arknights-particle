@@ -19,7 +19,7 @@ export default class LqWebglContainer {
         this.fitViewport = () => {
             const n = this.resoluteWidth;
             const r = this.resoluteHeight;
-            if (this.canvas.width === n && this.canvas.height === r) {
+            if (!(this.canvas.width === n && this.canvas.height === r)) {
                 this.renderer.setSize(n, r, false);
             }
         };

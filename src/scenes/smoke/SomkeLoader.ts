@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import anime from "animejs/lib/anime.es";
 import {
-    fill, flattenDepth, map,
+    debounce, flattenDepth, map,
 } from "lodash";
 
 import LqWebglContainer from "../../containers/LqWebglContainer";
@@ -138,7 +138,6 @@ interface SmokePointStruct {
 
 // Bi
 export default class SomkeLoader {
-    private static _instance: SomkeLoader;
     private onResize: () => void;
     private update: () => void;
     private uSpotLights: THREE.Uniform<SpotLight[]> | null;
@@ -174,7 +173,7 @@ export default class SomkeLoader {
         this.uOpacity = new THREE.Uniform(0);
         this.uResolution = new THREE.Uniform(1);
 
-        this.onResize = () => {
+        this.onResize = debounce(() => {
             if (this.responsiveModeHandler.mode === "desktop") {
                 this.uSpotLights.value = generateSpotLightDesktop(this.lqWebglContainer);
                 this.uPointLight.value = generatePointLightDesktop(this.lqWebglContainer);
@@ -188,7 +187,7 @@ export default class SomkeLoader {
                 map(this.aSize.array, () => (Math.random() + 1.5) * size)
             );
             this.aSize.needsUpdate = true;
-        };
+        });
 
         this.update = () => {
             this.uResolution.value = 0.5;
@@ -203,7 +202,7 @@ export default class SomkeLoader {
         };
 
         const geo = new THREE.BufferGeometry();
-        const pointArray = fill(new Array(t), 0);
+        const pointArray = Array.from(Array(t).keys());
 
         const positionBuffer = Float32Array.from(
             flattenDepth(pointArray.map(() => [this.lqWebglContainer.randX(), this.lqWebglContainer.randY(), 0]), 1)
@@ -227,17 +226,17 @@ export default class SomkeLoader {
         this.aSize = new THREE.BufferAttribute(s, 1);
         geo.setAttribute("size", this.aSize);
 
-        this.points = pointArray.map((val, e) => ({
-            x: positionBuffer[3 * e],
-            y: positionBuffer[3 * e + 1],
-            rotate: rotateBuffer[e],
-            opacity: opacityBuffer[e],
-            size: s[e],
+        this.points = pointArray.map((idx) => ({
+            x: positionBuffer[3 * idx],
+            y: positionBuffer[3 * idx + 1],
+            rotate: rotateBuffer[idx],
+            opacity: opacityBuffer[idx],
+            size: s[idx],
             vRtt: Math.random() - 0.5,
-            bufferPosition: positionBuffer.subarray(3 * e, 3 * e + 3),
-            bufferRotate: rotateBuffer.subarray(e, e + 1),
-            bufferOpacity: opacityBuffer.subarray(e, e + 1),
-            bufferSize: s.subarray(e, e + 1),
+            bufferPosition: positionBuffer.subarray(3 * idx, 3 * idx + 3),
+            bufferRotate: rotateBuffer.subarray(idx, idx + 1),
+            bufferOpacity: opacityBuffer.subarray(idx, idx + 1),
+            bufferSize: s.subarray(idx, idx + 1),
         }));
 
         const spotLights = generateSpotLightDesktop(this.lqWebglContainer);
