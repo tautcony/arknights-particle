@@ -56,20 +56,17 @@ export default class ParticleLoader {
         const { particleNum } = config;
         const [minSpeed, maxSpeed] = config.speedRange;
         this.updateTransform = () => {
-            const transform = this.getUpdatedTransform() || {
+            const transform = this.getUpdatedTransform() ?? {
                 x: 0,
                 y: 0,
                 sc: 1,
                 pointSize: 3,
             };
-            const { x } = transform;
-            const { y } = transform;
-            const { sc } = transform;
-            const { pointSize } = transform;
-            this.transform.x = x !== null ? x : this.transform.x;
-            this.transform.y = y !== null ? y : this.transform.y;
-            this.transform.sc = sc !== null ? sc : this.transform.sc;
-            this.uPointSize.value = pointSize !== null ? pointSize : this.transform.pointSize;
+            const { x, y, sc, pointSize } = transform;
+            this.transform.x = x ?? this.transform.x;
+            this.transform.y = y ?? this.transform.y;
+            this.transform.sc = sc ?? this.transform.sc;
+            this.uPointSize.value = pointSize ?? this.transform.pointSize ?? 3;
             return this;
         };
         this.update = () => {
@@ -139,13 +136,13 @@ export default class ParticleLoader {
             });
             const points = new THREE.Points(geo, material);
             this.mainWebglContainer.scene.add(points);
-        });
+        }).catch((e: unknown) => { console.error("Failed to load texture", e); });
     }
 
     public static main(
-        mainWebglContainer?: MainWebglContainer,
-        animationFrameHandler?: AnimationFrameHandler,
-        interactiveTouchHandler?: InteractiveTouchHandler
+        mainWebglContainer: MainWebglContainer,
+        animationFrameHandler: AnimationFrameHandler,
+        interactiveTouchHandler: InteractiveTouchHandler
     ) {
         return new ParticleLoader({
             particleNum: 1e4,
@@ -156,9 +153,9 @@ export default class ParticleLoader {
         });
     }
     public static sub(
-        mainWebglContainer?: MainWebglContainer,
-        animationFrameHandler?: AnimationFrameHandler,
-        interactiveTouchHandler?: InteractiveTouchHandler
+        mainWebglContainer: MainWebglContainer,
+        animationFrameHandler: AnimationFrameHandler,
+        interactiveTouchHandler: InteractiveTouchHandler
     ) {
         return new ParticleLoader({
             particleNum: 1500,

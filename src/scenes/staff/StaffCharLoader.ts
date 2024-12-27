@@ -27,15 +27,15 @@ const displayConfig = {
 // ns
 export default class StaffCharLoader {
     public canvas: HTMLCanvasElement;
-    public active: boolean = false;
-    public animeRunning: boolean = false;
-    public tex: THREE.Texture = null;
+    public active = false;
+    public animeRunning = false;
+    public tex: THREE.Texture | null = null;
     public loader: THREE.TextureLoader = new THREE.TextureLoader();
     public itemWidth: number;
     public itemHeight: number;
     public itemPosition: THREE.Vector2;
     public itemTransOffset: number;
-    public itemGradient: boolean = false;
+    public itemGradient = false;
     public renderer: THREE.WebGLRenderer;
     public emptyTexture: THREE.Texture = new THREE.Texture();
     public charTextureMap: Record<string, THREE.Texture> = {};
@@ -51,12 +51,16 @@ export default class StaffCharLoader {
     private resizeEventHandler: ResizeEventHandler;
 
     public constructor(
-        canvas: HTMLCanvasElement,
+        canvas: HTMLCanvasElement | null,
         mainWebglContainer: MainWebglContainer,
         animationFrameHandler: AnimationFrameHandler,
         resizeEventHandler: ResizeEventHandler
     ) {
-        this.canvas = canvas;
+        if (canvas !== null) {
+            this.canvas = canvas;
+        } else {
+            console.error("canvas is null");
+        }
         this.mainWebglContainer = mainWebglContainer;
         this.animationFrameHandler = animationFrameHandler;
         this.resizeEventHandler = resizeEventHandler;
@@ -154,7 +158,7 @@ export default class StaffCharLoader {
         }));
     }
     public async init(textureUrl: string) {
-        this.setDisplay(textureUrl);
+        await this.setDisplay(textureUrl);
         this.resize();
         this.animeRunning = true;
         await this.animeEnter("next");

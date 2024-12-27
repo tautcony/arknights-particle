@@ -140,8 +140,8 @@ interface SmokePointStruct {
 export default class SomkeLoader {
     private onResize: () => void;
     private update: () => void;
-    private uSpotLights: THREE.Uniform<SpotLight[]> | null;
-    private uPointLight: THREE.Uniform<PointLight> | null;
+    private uSpotLights: THREE.Uniform<SpotLight[] | null>;
+    private uPointLight: THREE.Uniform<PointLight | null>;
     private uOpacity: THREE.Uniform<number>;
     private uResolution: THREE.Uniform<number>;
     private aPosition: THREE.BufferAttribute;
@@ -149,7 +149,7 @@ export default class SomkeLoader {
     private aOpacity: THREE.BufferAttribute;
     private aSize: THREE.BufferAttribute;
     private points: SmokePointStruct[];
-    private opacityAnimation: anime.AnimeInstance = null;
+    private opacityAnimation: anime.AnimeInstance | null = null;
 
     private lqWebglContainer: LqWebglContainer;
     private responsiveModeHandler: ResponsiveModeHandler;
@@ -161,7 +161,7 @@ export default class SomkeLoader {
         responsiveModeHandler: ResponsiveModeHandler,
         animationFrameHandler: AnimationFrameHandler,
         resizeEventHandler: ResizeEventHandler,
-        t: number = 30
+        t = 30
     ) {
         this.lqWebglContainer = lqWebglContainer;
         this.responsiveModeHandler = responsiveModeHandler;
@@ -193,7 +193,12 @@ export default class SomkeLoader {
             this.uResolution.value = 0.5;
 
             this.points.forEach((point) => {
-                updateParticleProperties(this.lqWebglContainer, point, this.uPointLight.value.position);
+                const pointLight = this.uPointLight.value;
+                if (pointLight !== null) {
+                    updateParticleProperties(this.lqWebglContainer, point, pointLight.position);
+                } else {
+                    console.error("uPointLight is null");
+                }
             });
 
             this.aPosition.needsUpdate = true;
@@ -349,7 +354,7 @@ export default class SomkeLoader {
             duration: 500,
             complete: () => {
                 this.stop();
-                requestAnimationFrame(() => this.lqWebglContainer.stop());
+                requestAnimationFrame(() => { this.lqWebglContainer.stop(); });
             },
         });
     }

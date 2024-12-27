@@ -1,8 +1,8 @@
 export interface ParticleConstructorParams {
     pointIdx: number;
     speed: number;
-    point?: Float32Array;
-    color?: Float32Array;
+    point: Float32Array;
+    color: Float32Array;
 }
 
 export default class ParticleInstance {
@@ -17,8 +17,8 @@ export default class ParticleInstance {
     public b: number;
     public a: number;
 
-    public point?: Float32Array;
-    public color?: Float32Array;
+    public point: Float32Array;
+    public color: Float32Array;
 
     public constructor(t: ParticleConstructorParams) {
         this.run = 0;

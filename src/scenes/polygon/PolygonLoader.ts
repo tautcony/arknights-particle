@@ -45,7 +45,7 @@ export default class PolygonLoader {
         this.globalOpacity = 0;
         this.getUpdatedTransform = () => undefined;
         this.updateTransform = () => {
-            const transform = this.getUpdatedTransform() || { x: 0, y: 0, sc: 1 };
+            const transform = this.getUpdatedTransform() ?? { x: 0, y: 0, sc: 1 };
             const { x } = transform;
             const { y } = transform;
             const { sc } = transform;
@@ -116,7 +116,7 @@ export default class PolygonLoader {
             );
             this.mainWebglContainer.scene.add(lineSegments).add(points);
             this.fire();
-        });
+        }).catch((e: unknown) => { console.error("Failed to load texture", e); });
     }
 
     public fire() {
@@ -153,7 +153,6 @@ export default class PolygonLoader {
         });
     }
 
-    // eslint-disable-next-line class-methods-use-this
     public updatePolygonTransform(offset = 0) {
         this.setTransform(() => {
             if (this.responsiveModeHandler.mode === "desktop") {

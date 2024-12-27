@@ -4,7 +4,7 @@ import ResizeEventHandler from "./ResizeEventHandler";
 export default class ResponsiveModeHandler {
     public mode: "desktop" | "phone" = "desktop";
     private queue: ((mode?: string) => void)[] = [];
-    private widthThrottle: number = 430;
+    private widthThrottle = 430;
     private resizeEventController: ResizeEventHandler;
 
     public constructor(resizeEventController: ResizeEventHandler) {
@@ -32,7 +32,7 @@ export default class ResponsiveModeHandler {
         return this;
     }
     public add(handler: (mode?: string) => void) {
-        if (this.queue.indexOf(handler) < 0) {
+        if (!this.queue.includes(handler)) {
             this.queue.push(handler);
         }
         return this;

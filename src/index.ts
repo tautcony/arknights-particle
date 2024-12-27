@@ -53,7 +53,7 @@ function initParticleData(particle: SerializedParticleData, offset: [number, num
 
     const ret = {
         ...particle,
-        points: [],
+        points: [] as number[],
         shuffle() {
             this.points = flattenDepth(shuffle(point), 1);
             return this;
@@ -78,8 +78,8 @@ function initParticleData(particle: SerializedParticleData, offset: [number, num
 }
 
 const particleDataLoader = ({ fileName, key }) => {
-    // eslint-disable-next-line global-require, @typescript-eslint/no-var-requires, import/no-dynamic-require
-    const particleData = require(`../arknights/static/data/${fileName}`);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const particleData = require(`../arknights/static/data/${fileName as string}`);
     return {
         key,
         model: initParticleData(particleData),
@@ -214,7 +214,7 @@ export async function main() {
         pmain.setModel(faction[staffInfo[idx].camp].model);
         psub.setModel(pTitleData[random(0, pTitleData.length - 1)].model);
 
-        draw.transTo(staffInfo[idx].displayUrl, "next");
+        draw.transTo(staffInfo[idx].displayUrl, "next").catch((e: unknown) => { console.error("Failed to transTo", e); });
     }, 5000);
     setInterval(() => {
         pmain.setMode([EffectEnum.GATHER, EffectEnum.PERSPECTIVE, EffectEnum.SPREAD][random(0, 2)]);
@@ -231,4 +231,4 @@ export async function main() {
 
 init();
 background();
-main();
+main().catch((e: unknown) => { console.error("Failed in main", e); });

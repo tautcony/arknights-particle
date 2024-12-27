@@ -11,7 +11,7 @@ const fireflyUrl = "./arknights/static/firefly.5ec707a0de1eca4a0765.png";
 export default class FireFlyLoader {
     public update: () => void;
     public points: FireFlyInstance[];
-    public globalOpacity: number = 0;
+    public globalOpacity = 0;
     public aPosition: THREE.BufferAttribute;
     public aOpacity: THREE.BufferAttribute;
 
@@ -21,7 +21,7 @@ export default class FireFlyLoader {
     public constructor(
         mainWebglContainer: MainWebglContainer,
         animationFrameHandler: AnimationFrameHandler,
-        cnt: number = 20
+        cnt = 20
     ) {
         this.mainWebglContainer = mainWebglContainer;
         this.animationFrameHandler = animationFrameHandler;

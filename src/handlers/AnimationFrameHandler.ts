@@ -1,12 +1,12 @@
 // Be
 export default class AnimationFrameHandler {
     private queue: ((ts: number)=>void)[] = [];
-    private fps: number = 61;
-    private rafId: number = NaN;
-    private lastUpdated: number = NaN;
+    private fps = 61;
+    private rafId = NaN;
+    private lastUpdated = NaN;
 
     public add(handler: ((ts: number)=>void)) {
-        if (this.queue.indexOf(handler) < 0) {
+        if (!this.queue.includes(handler)) {
             this.queue.push(handler);
         }
         return this;

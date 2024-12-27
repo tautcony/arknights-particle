@@ -16,6 +16,7 @@
         "noLib": false,
         "preserveConstEnums": true,
         "noImplicitThis": true,
+        "strictNullChecks": true,
         "types": [
             "node"
         ]

@@ -14,7 +14,7 @@ export default class ResizeEventHandler {
         return this;
     }
     public add(handler: () => void) {
-        if (this.queue.indexOf(handler) < 0) {
+        if (!this.queue.includes(handler)) {
             this.queue.push(handler);
         }
         return this;
